@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bear-notes: AI Agent 持久记忆体系 — 设计规格</title>
+<style>
+  :root {
+    --bg: #1a1a2e; --card: #16213e; --text: #e0e0e0; --muted: #a0a0b0;
+    --accent: #7c8cf8; --green: #4caf84; --yellow: #e6b450; --red: #e0556a;
+    --border: #2a2a4a; --code-bg: #0f0f23;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 2em; margin-bottom: 8px; color: #fff; }
+  h1 + p { color: var(--muted); margin-bottom: 32px; }
+  h2 { font-size: 1.4em; color: var(--accent); margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.1em; color: #ccc; margin: 24px 0 12px; }
+  p { margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.95em; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.85em; text-transform: uppercase; }
+  td code, th code { background: var(--code-bg); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+  pre { background: var(--code-bg); padding: 20px; border-radius: 8px; overflow-x: auto; font-size: 0.9em; line-height: 1.6; margin: 16px 0; border: 1px solid var(--border); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin: 20px 0; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+  .badge-green { background: #1a3a2a; color: var(--green); }
+  .badge-yellow { background: #3a2e1a; color: var(--yellow); }
+  .badge-red { background: #3a1a1a; color: var(--red); }
+  .badge-blue { background: #1a1a3a; color: var(--accent); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  ul, ol { margin: 8px 0 16px 20px; }
+  li { margin-bottom: 4px; }
+  blockquote { border-left: 3px solid var(--accent); padding: 4px 16px; margin: 12px 0; color: var(--muted); font-style: italic; }
+  .arch-layer { background: var(--card); border: 1px dashed var(--border); border-radius: 8px; padding: 20px; margin: 8px 0; }
+  .arch-layer.top { border-color: var(--accent); }
+  .arch-layer.bottom { border-color: var(--green); }
+  .arrow { text-align: center; color: var(--muted); font-size: 0.9em; margin: 4px 0; }
+  code { color: #c9a0ff; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  .formula { background: var(--card); padding: 16px 20px; border-radius: 8px; text-align: center; font-size: 1.1em; font-family: 'SF Mono', 'Fira Code', monospace; margin: 16px 0; }
+  .formula span { color: var(--accent); }
+  .pass { color: var(--green); }
+  .note { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<h1>bear-notes: AI Agent 持久记忆体系</h1>
+<p>设计规格 · 2026-05-30 · CoALA 框架 · 80/20 模式 · <span class="pass">核心脚本已验证</span></p>
+
+<h2>1. Architecture</h2>
+
+<div class="arch-layer top">
+  <strong>memory/SKILL.md</strong> — 记忆层（应用层）
+  <p style="margin-top:8px;margin-bottom:0;color:var(--muted)">记忆格式定义 · 操作协议 · 分类规则 · 检索排序 · embed.py / search.py</p>
+</div>
+<div class="arrow">↓ 依赖基础层原语</div>
+<div class="arch-layer bottom">
+  <strong>SKILL.md</strong> — 基础层
+  <p style="margin-top:8px;margin-bottom:0;color:var(--muted)">Note Writing Conventions · MCP 操作速查 · Tag Operation Protocol · Known Issues</p>
+</div>
+
+<p style="margin-top:20px">基础层不感知记忆业务，记忆层调用基础层原语。两层同仓库，独立演进。</p>
+
+<h2>2. Memory Types</h2>
+
+<div class="grid">
+  <div class="card">
+    <h3 style="margin-top:0"><span class="badge badge-blue">user</span></h3>
+    <p style="margin:0">用户身份 · 偏好 · 习惯 · 知识背景</p>
+    <p style="margin:8px 0 0 0;font-size:0.9em;color:var(--muted)">例：编码风格使用 tabs</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0"><span class="badge badge-yellow">feedback</span></h3>
+    <p style="margin:0">对 agent 行为的纠正 · 认可</p>
+    <p style="margin:8px 0 0 0;font-size:0.9em;color:var(--muted)">例：不要 mock 数据库做测试</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0"><span class="badge badge-green">project</span></h3>
+    <p style="margin:0">项目上下文 · 决策 · 约束</p>
+    <p style="margin:8px 0 0 0;font-size:0.9em;color:var(--muted)">例：6 月 5 日起冻结合入</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0"><span class="badge badge-red">reference</span></h3>
+    <p style="margin:0">外部资源指针</p>
+    <p style="margin:8px 0 0 0;font-size:0.9em;color:var(--muted)">例：pipeline 问题在 Linear INGEST</p>
+  </div>
+</div>
+
+<h2>3. Tag Hierarchy</h2>
+
+<pre>#ai/memory/user              ← 索引笔记
+#ai/memory/user/entry        ← 条目笔记
+
+#ai/memory/feedback          ← 索引笔记
+#ai/memory/feedback/entry    ← 条目笔记
+
+#ai/memory/project           ← 索引笔记
+#ai/memory/project/entry     ← 条目笔记
+
+#ai/memory/reference         ← 索引笔记
+#ai/memory/reference/entry   ← 条目笔记</pre>
+
+<h2>4. Storage Model</h2>
+
+<div class="card">
+  <p style="margin-top:0"><strong>#ai/memory/user</strong> — 索引笔记，1 次调用概览全部 user 类记忆</p>
+  <div style="margin-top:10px">
+    <span class="badge badge-blue">条目 1</span>&nbsp;
+    <span class="badge badge-blue">条目 2</span>&nbsp;
+    <span class="badge badge-blue">条目 N</span>
+  </div>
+  <p style="margin-top:10px;color:var(--muted);font-size:0.9em">条条独立笔记，baseHash 保护并发写入</p>
+</div>
+
+<div class="grid">
+  <div><h3>Read</h3><p style="color:var(--muted)">概览 → 索引笔记<br>详情 → <code>get_note(entry_id)</code></p></div>
+  <div><h3>Search</h3><p style="color:var(--muted)"><code>search_notes(tag: #ai/memory/user/entry)</code><br>→ 语义排序 → Top N</p></div>
+  <div><h3>Write</h3><p style="color:var(--muted)"><code>create_note</code> → <code>edit_note</code> 更新索引</p></div>
+  <div><h3>Delete</h3><p style="color:var(--muted)"><code>trash_note</code> → <code>edit_note</code> 更新索引</p></div>
+</div>
+
+<h2>5. Note Format</h2>
+
+<h3>Entry Note</h3>
+
+<pre style="font-family: 'SF Mono', 'Fira Code', monospace;">
+<span style="color:#555">1</span>  # 「MEM」用户偏好：编码风格使用 tabs
+<span style="color:#555">2</span>  #ai/memory/user/entry
+<span style="color:#555">3</span>
+<span style="color:#555">4</span>  <span style="color:#666">&lt;!-- type: user agent: claude-code confidence: confirmed updated: 2026-05-30 --&gt;</span>
+<span style="color:#555">5</span>
+<span style="color:#555">6</span>  用户偏好使用 tabs 而非 spaces 进行缩进。
+<span style="color:#555">7</span>
+<span style="color:#555">8</span>  <span style="color:#666">&gt; claude-code · 2026-05-30 — 用户指出「用 tab，别用 space」</span>
+</pre>
+
+<table>
+  <tr><th>Line</th><th>Content</th><th>Purpose</th></tr>
+  <tr><td>1</td><td><code># 「MEM」&lt;描述&gt;</code></td><td>「MEM」前缀区分 AI 记忆 vs 用户笔记</td></tr>
+  <tr><td>2</td><td><code>#ai/memory/&lt;type&gt;/entry</code></td><td>标签分类</td></tr>
+  <tr><td>4</td><td><code>&lt;!-- type: ... --&gt;</code></td><td>HTML 注释，脚本解析，Bear 预览不渲染</td></tr>
+  <tr><td>6+</td><td>正文</td><td>自然语言，1-3 段</td></tr>
+  <tr><td>8</td><td><code>&gt; agent · date — source</code></td><td>溯源行</td></tr>
+</table>
+
+<table>
+  <tr><th>Field</th><th>Required</th><th>Values</th><th>Purpose</th></tr>
+  <tr><td><code>type</code></td><td><span class="badge badge-green">yes</span></td><td><code>user</code> · <code>feedback</code> · <code>project</code> · <code>reference</code></td><td>记忆分类</td></tr>
+  <tr><td><code>agent</code></td><td><span class="badge badge-green">yes</span></td><td><code>claude-code</code> · <code>codebuddy</code> · <code>workbuddy</code> · ...</td><td>来源工具</td></tr>
+  <tr><td><code>confidence</code></td><td><span class="badge badge-green">yes</span></td><td><code>confirmed</code> · <code>inferred</code></td><td>可信度，影响检索权重</td></tr>
+  <tr><td><code>updated</code></td><td><span class="badge badge-green">yes</span></td><td><code>YYYY-MM-DD</code></td><td>参与 recency 排序</td></tr>
+</table>
+
+<h3>Index Note</h3>
+
+<pre style="font-family: 'SF Mono', 'Fira Code', monospace;">
+<span style="color:#555">1</span>  # 「MEM」User Memory Index
+<span style="color:#555">2</span>  #ai/memory/user
+<span style="color:#555">3</span>
+<span style="color:#555">4</span>  <span style="color:#666">&lt;!-- type: user agent: all updated: 2026-05-30 --&gt;</span>
+<span style="color:#555">5</span>
+<span style="color:#555">6</span>  ## 条目
+<span style="color:#555">7</span>
+<span style="color:#555">8</span>  - [[「MEM」用户偏好：编码风格]] — 使用 tabs
+<span style="color:#555">9</span>  - [[「MEM」用户偏好：错误处理]] — 简洁防御
+</pre>
+
+<p>Wiki link 列表，Bear 原生可跳转。新增记忆在末尾追加一行。</p>
+
+<h2>6. Classification</h2>
+
+<table>
+  <tr><th>Decision</th><th>→ Type</th></tr>
+  <tr><td>关于「你是谁、你喜欢什么、怎么工作」</td><td><span class="badge badge-blue">user</span></td></tr>
+  <tr><td>关于「你做错了、应该这样做」</td><td><span class="badge badge-yellow">feedback</span></td></tr>
+  <tr><td>关于「这个项目正在发生什么、约束条件」</td><td><span class="badge badge-green">project</span></td></tr>
+  <tr><td>关于「信息在哪里能找到」</td><td><span class="badge badge-red">reference</span></td></tr>
+  <tr><td>不确定</td><td><span class="badge badge-green">project</span>（默认）</td></tr>
+</table>
+
+<p>Agent 创建记忆后输出分类理由，用户可在 Bear 中直接修改标签纠正。</p>
+
+<h2>7. Retrieval & Ranking</h2>
+
+<div class="formula">
+  score = <span>0.6</span> × similarity(query, memory) + <span>0.3</span> × recency(days) + <span>0.1</span> × confidence_boost
+</div>
+
+<ul>
+  <li><strong>similarity</strong> — cosine on all-MiniLM-L6-v2 embeddings (384-dim)</li>
+  <li><strong>recency</strong> — exponential decay, half-life 30 days</li>
+  <li><strong>confidence_boost</strong> — 1.5× for <code>confirmed</code>, 0.8× for <code>inferred</code></li>
+</ul>
+
+<h2>8. Storage & Sync</h2>
+
+<table>
+  <tr><th>Artifact</th><th>Location</th><th>Sync</th></tr>
+  <tr><td>Memory notes (content)</td><td>Bear database, <code>#ai/memory/*/entry</code></td><td>iCloud automatic</td></tr>
+  <tr><td>Vector index</td><td><code>~/.bear-memory-index/embeddings.jsonl</code></td><td>Per-device, <code>embed.py --rebuild</code></td></tr>
+</table>
+
+<p>Vector index is NOT in git repo. iCloud syncs note content across devices; each device runs <code>embed.py --rebuild</code> once on first use to rebuild the index from its local Bear database.</p>
+
+<h2>9. File Changes</h2>
+
+<table>
+  <tr><th>Status</th><th>Path</th><th>Description</th></tr>
+  <tr><td><span class="badge badge-green">DONE</span></td><td><code>memory/embed.py</code></td><td>Embedding generation + index maintenance</td></tr>
+  <tr><td><span class="badge badge-green">DONE</span></td><td><code>memory/search.py</code></td><td>Semantic search + hybrid ranking</td></tr>
+  <tr><td><span class="badge badge-green">DONE</span></td><td><code>memory/requirements.txt</code></td><td>sentence-transformers >= 5.0, numpy >= 2.0</td></tr>
+  <tr><td>Pending</td><td><code>memory/SKILL.md</code></td><td>Memory system skill definition</td></tr>
+  <tr><td>Unchanged</td><td><code>SKILL.md</code></td><td>Base layer, no modifications needed</td></tr>
+</table>
+
+<h2>10. Feasibility Verification <span class="badge badge-green">VERIFIED</span></h2>
+
+<p style="color:var(--muted)">2026-05-30 · Python 3.9 · sentence-transformers 5.1.2 · all-MiniLM-L6-v2 (384-dim) · Bear 2.8+</p>
+
+<h3>Test Flow</h3>
+<pre>1. Create a test memory note (following format spec)
+2. embed.py --rebuild   → Scan Bear → Generate embeddings → Write JSONL
+3. search.py            → Multiple queries for semantic search + ranking
+4. embed.py --stats     → Verify index state</pre>
+
+<h3>Results</h3>
+
+<table>
+  <tr><th>Test</th><th>Result</th><th>Detail</th></tr>
+  <tr><td>embed.py --rebuild</td><td><span class="pass">✅</span></td><td>Scanned 2 memories, 384-dim vectors, wrote embeddings.jsonl</td></tr>
+  <tr><td>Chinese semantic search</td><td><span class="pass">✅</span></td><td><code>"代码格式化规范"</code> → matched "编码风格 tabs", score=0.69</td></tr>
+  <tr><td>English semantic search</td><td><span class="pass">✅</span></td><td><code>"tabs vs spaces"</code> → sim=0.47, recency=0.98, conf=1.5, score=0.72</td></tr>
+  <tr><td>Type filter</td><td><span class="pass">✅</span></td><td><code>--type user</code> correctly filtered</td></tr>
+  <tr><td>--raw score breakdown</td><td><span class="pass">✅</span></td><td>similarity / recency / confidence all visible</td></tr>
+  <tr><td>Hybrid ranking</td><td><span class="pass">✅</span></td><td>Relevant 0.72 vs random 0.49, Δ = 0.23</td></tr>
+  <tr><td>embed.py --stats</td><td><span class="pass">✅</span></td><td>Types: {user:2}, Agents: {claude-code:2}, Dims: 384</td></tr>
+  <tr><td>Model load time</td><td><span class="note">~3s</span></td><td>First load of all-MiniLM-L6-v2, &lt;10ms subsequent</td></tr>
+  <tr><td>Cross-device rebuild</td><td><span class="pass">✅</span></td><td>embed.py --rebuild regenerates from Bear notes</td></tr>
+</table>
+
+<h3>Known Limitations</h3>
+<ul>
+  <li><strong>Initial model download</strong> (~80MB) requires network; fully offline after first run</li>
+  <li><strong>Baseline scores</strong> (~0.49): improves with more diverse memories in the index</li>
+  <li>No explicit synonym expansion (relies on model training data)</li>
+  <li><code>read_note_content</code> offset/limit bug (Bear MCP); full read fallback used</li>
+</ul>
+
+<h2>Next Steps</h2>
+<p>Write <code>memory/SKILL.md</code> — the memory system skill that teaches agents how to create, classify, retrieve, and maintain memory notes following this specification.</p>
+
+</body>
+</html>

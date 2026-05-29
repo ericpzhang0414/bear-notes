@@ -13,14 +13,21 @@ NC='\033[0m'
 CHECK_ONLY=false
 UNINSTALL=false
 FORCE=false
+NO_MEMORY=false
 
 for arg in "$@"; do
   case "$arg" in
     --check) CHECK_ONLY=true ;;
     --uninstall) UNINSTALL=true ;;
     --force) FORCE=true ;;
+    --no-memory) NO_MEMORY=true ;;
     --help|-h)
-      echo "Usage: ./install.sh [--check] [--uninstall] [--force]"
+      echo "Usage: ./install.sh [--check] [--uninstall] [--force] [--no-memory]"
+      echo "  (no args)  Auto-detect agents, install skill + MCP + memory"
+      echo "  --check    Verify only, no changes"
+      echo "  --uninstall  Remove all symlinks"
+      echo "  --force    Skip confirmation on old version replacement"
+      echo "  --no-memory  Skip memory dependencies (pip install + embed rebuild)"
       exit 0 ;;
     *) echo "Unknown: $arg"; exit 1 ;;
   esac
@@ -205,6 +212,63 @@ for entry in "${AGENTS[@]}"; do
   esac
 done
 
+# ── Phase X: Memory system ──────────────────────────────────────
+memory_pip="OK"
+memory_index="OK"
+memory_model="OK"
+
+if ! $CHECK_ONLY && ! $NO_MEMORY; then
+  echo ""
+  echo "--- Memory system ---"
+
+  # pip install
+  req_file="$SCRIPT_DIR/memory/requirements.txt"
+  if [[ -f "$req_file" ]]; then
+    if python3 -c "import sentence_transformers" &>/dev/null; then
+      echo "  pip deps: already installed"
+    else
+      echo "  pip deps: installing..."
+      if python3 -m pip install -r "$req_file" --quiet 2>&1; then
+        memory_pip="NEW"
+        echo "  pip deps: installed"
+      else
+        memory_pip="FAIL"
+        echo "  pip deps: FAILED"
+      fi
+    fi
+  else
+    memory_pip="N/A"
+  fi
+
+  # Index directory
+  index_dir="$HOME/.bear-memory-index"
+  if [[ -d "$index_dir" ]]; then
+    echo "  index dir: $index_dir"
+  else
+    mkdir -p "$index_dir"
+    echo "  index dir: created $index_dir"
+  fi
+
+  # embed rebuild
+  embed_script="$SCRIPT_DIR/memory/embed.py"
+  if [[ -f "$embed_script" ]]; then
+    echo "  embed rebuild: running..."
+    if python3 "$embed_script" --rebuild 2>&1; then
+      echo "  embed rebuild: OK"
+    else
+      memory_index="FAIL"
+      echo "  embed rebuild: FAILED"
+    fi
+  else
+    memory_index="N/A"
+  fi
+fi
+
 echo ""
 echo -e "Summary: ${GREEN}$installed installed${NC}, $skipped skipped (not detected)"
 echo -e "MCP:     $mcp_ok already configured, $mcp_new newly configured"
+if ! $NO_MEMORY; then
+  printf "Memory:  pip: "; c "$memory_pip"
+  printf "  index: "; c "$memory_index"
+  echo ""
+fi
