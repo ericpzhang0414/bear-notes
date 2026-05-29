@@ -1,6 +1,6 @@
 ---
 name: bear-notes
-description: Use when working with Bear notes — creating, editing, organizing, writing, or managing notes. Triggers on: Bear notes, 笔记, bearcli, 标签, 整理, 创建笔记, 写笔记, note format, Markdown notes. Covers both MCP operations and note writing conventions.
+description: Use when working with Bear notes — creating, editing, organizing, writing, or managing notes. Triggers on: Bear notes, 笔记, 写笔记, 创建笔记, 整理笔记, 标签, note format, Markdown notes. Covers both MCP operations and note writing conventions.
 ---
 
 # Bear Notes
