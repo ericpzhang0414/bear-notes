@@ -350,3 +350,5 @@ get_note(id, includeContent:false)
 **`read_note_content` offset/limit returns empty** with offset values 0 or 1. Full reads (no offset/limit) work correctly.
 
 **`create_note` tags param places tags at bottom.** Bear's user setting controls placement. Use `content` to guarantee line-2 positioning.
+
+**iCloud sync conflict badge persists after editing.** When a note carries a conflict marker but has no duplicate, editing the content may not clear it. Fix: `archive_note` → `restore_note`. The location change triggers a full metadata refresh that clears the stale conflict state. (Verified on a 21-attachment note.)
