@@ -113,10 +113,13 @@ bear-notes/
 | Copilot CLI | `~/.copilot/instructions.md` | ✅ |
 | Codex CLI | `~/.codex/CODEX.md` | ✅ |
 
-注入的指令块要求代理：
-- 会话开始时召回 `#ai/memory/user/entry` 和 `#ai/memory/feedback/entry`
-- 学习到用户偏好、纠正或决策时主动创建记忆
-- 绝不等待用户说「记住这个」
+注入的指令块采用 3-RULE 结构，明确的 TRIGGER → ACTION 模式：
+
+| RULE | 触发条件 | 动作 |
+|------|---------|------|
+| **RULE 1** | 会话开始 | 静默加载 user 和 feedback 记忆 |
+| **RULE 2** | 用户提到 规则/规范/约定/流程/之前/上次/习惯… | 在回答前搜索 `#ai/memory` |
+| **RULE 3** | 学到新用户事实或纠正 | 立即写入记忆（详见 bear-memory skill） |
 
 跳过此步骤：`./install.sh --no-recall`
 

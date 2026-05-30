@@ -113,10 +113,13 @@ bear-notes/
 | Copilot CLI | `~/.copilot/instructions.md` | ✅ |
 | Codex CLI | `~/.codex/CODEX.md` | ✅ |
 
-The injected block instructs the agent to:
-- Recall `#ai/memory/user/entry` and `#ai/memory/feedback/entry` at session start
-- Proactively create memories when learning user preferences, corrections, or decisions
-- Never wait for the user to say "remember this"
+The injected block uses a 3-RULE structure with explicit TRIGGER → ACTION patterns:
+
+| RULE | Trigger | Action |
+|------|---------|--------|
+| **RULE 1** | Session start | Load user & feedback memories silently |
+| **RULE 2** | User mentions 规则/规范/约定/流程/之前/上次/习惯… | Search `#ai/memory` BEFORE answering |
+| **RULE 3** | Learn new user fact or correction | Write memory immediately (see bear-memory skill) |
 
 To skip this step: `./install.sh --no-recall`
 

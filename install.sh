@@ -271,18 +271,23 @@ fi
 RECALL_BLOCK='
 ---
 
-## Bear Memory Auto-Recall
+## Bear Memory — MUST FOLLOW ALL 3 RULES
 
-> This section is managed by `bear-notes install.sh`. Re-run install.sh to update.
+### RULE 1: Recall at Session Start
+→ Use search_notes tool to load #ai/memory/user/entry
+  and #ai/memory/feedback/entry silently.
 
-At the start of each conversation, recall memories from Bear:
-- Search `#ai/memory/user/entry` for user preferences and habits
-- Search `#ai/memory/feedback/entry` for behavioral corrections
-- Search `#ai/memory/project/entry` if working on a known project
+### RULE 2: Search Before Answering
+→ TRIGGER: User mentions 规则/规范/约定/流程/之前/上次/
+  习惯/偏好/工作方式/开发方式/项目知识/rules/conventions/
+  workflow/preferences
+→ ACTION: Use search_notes tool to search #ai/memory BEFORE answering.
+  Do NOT rely on preloaded memories — they may have expired.
 
-When you learn new information about the user (preferences, corrections, project
-decisions), proactively create a memory following the `bear-memory` skill protocol.
-Do NOT wait for the user to say "remember this."
+### RULE 3: Write New Memories Proactively
+→ TRIGGER: Learn new user fact / correction / project decision
+→ ACTION: Write or update memory immediately.
+  Full protocol: see bear-memory skill.
 '
 
 # Agent → global instruction file mapping (relative to $HOME)
@@ -310,7 +315,7 @@ if ! $CHECK_ONLY; then
     target="$HOME/$instr_file"
 
     # Check if recall block already present
-    if [[ -f "$target" ]] && grep -q "Bear Memory Auto-Recall" "$target" 2>/dev/null; then
+    if [[ -f "$target" ]] && grep -q "Bear Memory" "$target" 2>/dev/null; then
       echo "  $name: already configured ($instr_file)"
       auto_config_count=$((auto_config_count + 1))
       continue

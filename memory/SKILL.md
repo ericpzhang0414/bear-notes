@@ -1,6 +1,6 @@
 ---
 name: bear-memory
-description: Persistent memory for AI agents. MUST be loaded at the start of EVERY conversation to recall user preferences, feedback, and project context. Also triggers on explicit commands: remember, 记忆, recall, 回忆, forget, 忘记, memory, what do you know about me, 你知道我, 之前说过, preferences, 偏好. Agent MUST proactively write new memories when learning user preferences, receiving corrections, or capturing project decisions — do NOT wait for the user to say "remember this." Depends on bear-notes skill for Bear MCP operations.
+description: Persistent memory for AI agents. MUST be loaded at the start of EVERY conversation to recall user preferences, feedback, and project context. Also triggers on: remember, 记忆, recall, 回忆, forget, 忘记, memory, what do you know about me, 你知道我, 之前说过, 之前, 上次, preferences, 偏好, 规则, rules, 规范, conventions, 约定, 流程, workflow, 怎么做的, how to, 项目知识, 开发方式, 工作习惯, 习惯. Agent MUST proactively write new memories when learning user preferences, receiving corrections, or capturing project decisions — do NOT wait for the user to say "remember this." Depends on bear-notes skill for Bear MCP operations.
 ---
 
 # Bear Memory
@@ -127,6 +127,9 @@ search_notes(query: "「MEM」", tag: #ai/memory/user/entry) → load user prefe
 search_notes(query: "「MEM」", tag: #ai/memory/feedback/entry) → load behavioral feedback
 ```
 Keep these in context throughout the conversation. They are your persistent knowledge about the user.
+
+**When the user asks about project conventions, rules, workflows, or personal preferences:**
+Use `search_notes` tool to search `#ai/memory` BEFORE composing your answer. Do NOT rely on preloaded memories alone — they may have expired.
 
 **Before starting a task that involves a known project:**
 ```
