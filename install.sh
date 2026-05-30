@@ -264,6 +264,79 @@ if ! $CHECK_ONLY && ! $NO_MEMORY; then
   fi
 fi
 
+# ── Phase Y: Global instruction auto-config ────────────────────────
+# Injects memory auto-recall block into each agent's global instruction
+# file (e.g., ~/.claude/CLAUDE.md). Idempotent — skips if already present.
+
+RECALL_BLOCK='
+---
+
+## Bear Memory Auto-Recall
+
+> This section is managed by `bear-notes install.sh`. Re-run install.sh to update.
+
+At the start of each conversation, recall memories from Bear:
+- Search `#ai/memory/user/entry` for user preferences and habits
+- Search `#ai/memory/feedback/entry` for behavioral corrections
+- Search `#ai/memory/project/entry` if working on a known project
+
+When you learn new information about the user (preferences, corrections, project
+decisions), proactively create a memory following the `bear-memory` skill protocol.
+Do NOT wait for the user to say "remember this."
+'
+
+# Agent → global instruction file mapping (relative to $HOME)
+declare -A AGENT_INSTRUCTION_FILES
+AGENT_INSTRUCTION_FILES=(
+  ["claude-code"]=".claude/CLAUDE.md"
+  ["codebuddy"]=".codebuddy/CODEBUDDY.md"
+  ["workbuddy"]=".workbuddy/WORKBUDDY.md"
+  ["gemini"]=".gemini/GEMINI.md"
+  ["copilot"]=".copilot/instructions.md"
+  ["codex"]=".codex/CODEX.md"
+)
+
+auto_config_count=0
+if ! $CHECK_ONLY; then
+  echo ""
+  echo "--- Global instruction auto-config ---"
+
+  for entry in "${AGENTS[@]}"; do
+    read -r name dtype dval sdir mcp <<< "$entry"
+    agent_installed "$dtype" "$dval" || continue
+
+    instr_file="${AGENT_INSTRUCTION_FILES[$name]}"
+    [[ -z "$instr_file" ]] && continue
+    target="$HOME/$instr_file"
+
+    # Check if recall block already present
+    if [[ -f "$target" ]] && grep -q "Bear Memory Auto-Recall" "$target" 2>/dev/null; then
+      echo "  $name: already configured ($instr_file)"
+      auto_config_count=$((auto_config_count + 1))
+      continue
+    fi
+
+    # Create parent dir if needed
+    mkdir -p "$(dirname "$target")"
+
+    # Append (or create) the instruction file
+    if [[ -f "$target" ]]; then
+      echo "$RECALL_BLOCK" >> "$target"
+      echo "  $name: appended to $instr_file"
+    else
+      # New file: add a header line
+      echo "# $name global instructions" > "$target"
+      echo "$RECALL_BLOCK" >> "$target"
+      echo "  $name: created $instr_file"
+    fi
+    auto_config_count=$((auto_config_count + 1))
+  done
+
+  if [[ $auto_config_count -eq 0 ]]; then
+    echo "  (no agents with global instruction support detected)"
+  fi
+fi
+
 echo ""
 echo -e "Summary: ${GREEN}$installed installed${NC}, $skipped skipped (not detected)"
 echo -e "MCP:     $mcp_ok already configured, $mcp_new newly configured"
@@ -272,3 +345,4 @@ if ! $NO_MEMORY; then
   printf "  index: "; c "$memory_index"
   echo ""
 fi
+echo -e "Recall:  $auto_config_count agents configured"
