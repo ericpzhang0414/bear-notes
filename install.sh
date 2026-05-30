@@ -14,6 +14,7 @@ CHECK_ONLY=false
 UNINSTALL=false
 FORCE=false
 NO_MEMORY=false
+NO_RECALL=false
 
 for arg in "$@"; do
   case "$arg" in
@@ -21,6 +22,7 @@ for arg in "$@"; do
     --uninstall) UNINSTALL=true ;;
     --force) FORCE=true ;;
     --no-memory) NO_MEMORY=true ;;
+    --no-recall) NO_RECALL=true ;;
     --help|-h)
       echo "Usage: ./install.sh [--check] [--uninstall] [--force] [--no-memory]"
       echo "  (no args)  Auto-detect agents, install skill + MCP + memory"
@@ -286,8 +288,9 @@ RECALL_BLOCK='
 
 ### RULE 3: Write New Memories Proactively
 → TRIGGER: Learn new user fact / correction / project decision
-→ ACTION: Write or update memory immediately.
-  Full protocol: see bear-memory skill.
+→ ACTION: Create note under #ai/memory/<type>/entry in Bear.
+        NEVER use built-in agent memory for this.
+        Full protocol: see bear-memory skill.
 '
 
 # Agent → global instruction file mapping (relative to $HOME)
@@ -302,7 +305,7 @@ AGENT_INSTRUCTION_FILES=(
 )
 
 auto_config_count=0
-if ! $CHECK_ONLY; then
+if ! $CHECK_ONLY && ! $NO_RECALL; then
   echo ""
   echo "--- Global instruction auto-config ---"
 

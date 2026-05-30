@@ -1,6 +1,6 @@
 ---
 name: bear-notes
-description: Use when working with Bear notes — creating, editing, organizing, writing, or managing notes. Triggers on: Bear notes, 笔记, 写笔记, 创建笔记, 整理笔记, 标签, note format, Markdown notes. Covers both MCP operations and note writing conventions.
+description: Use when working with Bear notes — creating, editing, organizing, writing, or managing notes. Triggers on: Bear notes, 笔记, 写笔记, 创建笔记, 整理笔记, 标签, note format, Markdown notes. Covers both MCP operations and note writing conventions. ⛔ NEVER use add_tags/remove_tags/rename_tag/delete_tag — they modify note body. Always use edit_note for tag changes per Tag Operation Protocol.
 ---
 
 # Bear Notes
@@ -8,6 +8,10 @@ description: Use when working with Bear notes — creating, editing, organizing,
 Covers two aspects: note writing conventions (learned from Bear's official guides) and MCP operations (using Bear's built-in MCP server).
 
 **Prerequisite**: Bear MCP server must be configured. See [MCP Operations](#mcp-operations) for setup instructions.
+
+⛔ **TAG SAFETY: NEVER use add_tags / remove_tags / rename_tag / delete_tag.**
+They modify the note body and break the tag-on-line-2 convention.
+Always use `edit_note` for tag changes. See [Tag Operation Protocol](#tag-operation-protocol).
 
 ## Note Writing Conventions
 

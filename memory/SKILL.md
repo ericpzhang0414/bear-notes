@@ -158,7 +158,7 @@ python3 memory/search.py "<query about the situation>" --type feedback
 **An external resource (URL, doc, contact) is referenced that will be useful later:**
 → Create a `reference` memory.
 
-**Write silently.** Don't interrupt the conversation with "I'll remember that." Just create the memory. If the user should know, a brief one-line confirmation at the end of your response is sufficient.
+**Write to Bear** — NEVER use built-in agent memory or /memory command. Target: `#ai/memory/<type>/entry` notes. Don't interrupt the conversation with "I'll remember that." Just create the memory. If the user should know, a brief one-line confirmation at the end of your response is sufficient.
 
 ### When NOT to Write
 
@@ -166,9 +166,13 @@ python3 memory/search.py "<query about the situation>" --type feedback
 - Information already captured in an existing memory (check before writing)
 - Temporary state (e.g., "currently in the middle of refactoring X")
 
+→ For HOW to create memories: see **Create Memory** protocol below.
+
 ## Operations
 
 ### Create Memory
+
+Note: Tag changes in Bear must follow the **Tag Operation Protocol** in bear-notes skill. NEVER use add_tags/remove_tags.
 
 ```
 1. Classify the memory → determine type
@@ -241,6 +245,8 @@ search_notes(query: "「MEM」", tag: #ai/memory/feedback/entry) → all feedbac
 ```
 
 ### Update Memory
+
+Note: Tag changes must follow the **Tag Operation Protocol** in bear-notes skill.
 
 **For multi-entry notes (has `##` sections):**
 ```
