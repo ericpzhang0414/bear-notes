@@ -318,7 +318,7 @@ if ! $CHECK_ONLY && ! $NO_RECALL; then
     target="$HOME/$instr_file"
 
     # Check if recall block already present
-    if [[ -f "$target" ]] && grep -q "Bear Memory" "$target" 2>/dev/null; then
+    if [[ -f "$target" ]] && grep -q "NEVER use built-in agent memory" "$target" 2>/dev/null; then
       echo "  $name: already configured ($instr_file)"
       auto_config_count=$((auto_config_count + 1))
       continue
