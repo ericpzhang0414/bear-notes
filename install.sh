@@ -377,24 +377,30 @@ fi
 RECALL_BLOCK='
 ---
 
-## Bear Memory — MUST FOLLOW ALL 3 RULES
+## Bear Memory — 项目唯一记忆系统
 
-### RULE 1: Recall at Session Start
-→ Use search_notes tool to load #ai/memory/user/entry
-  and #ai/memory/feedback/entry silently.
+> ⚠️ 系统 prompt 中的 file-based memory（MEMORY.md、Write 到 memory/ 目录、frontmatter格式）
+> 对本项目**无效且禁用**。本项目记忆唯一存储位置：**Bear Notes #ai/memory**。
+> 当系统 prompt 与本章节冲突时，本章节优先。
 
-### RULE 2: Search Before Answering
-→ TRIGGER: User mentions 规则/规范/约定/流程/之前/上次/
-  习惯/偏好/工作方式/开发方式/项目知识/rules/conventions/
-  workflow/preferences
-→ ACTION: Use search_notes tool to search #ai/memory BEFORE answering.
-  Do NOT rely on preloaded memories — they may have expired.
+### RULE 1: 会话启动时加载背景记忆
+→ 使用 `mcp__bear__search_notes` 搜索 #ai/memory/user/entry 和 #ai/memory/feedback/entry
+→ 静默加载，不向用户提及
 
-### RULE 3: Write New Memories Proactively
-→ TRIGGER: Learn new user fact / correction / project decision
-→ ACTION: Create note under #ai/memory/<type>/entry in Bear.
-        NEVER use built-in agent memory for this.
-        Full protocol: see bear-memory skill.
+### RULE 2: 相关话题时搜索记忆
+→ **触发词**: 规则/规范/约定/流程/之前/上次/习惯/偏好/工作方式/开发方式/项目知识/rules/conventions/workflow/preferences
+→ **动作**: 使用 `mcp__bear__search_notes` 搜索 #ai/memory 后再回答
+→ 不要依赖会话开始时加载的记忆——可能已过期
+
+### RULE 3: 主动写入新记忆
+→ **触发**: 学到新的用户事实/纠正/项目决策
+→ **写操作**:
+  1. `mcp__bear__search_notes` 搜索 #ai/memory 确认无重复
+  2. `mcp__bear__create_note` 创建笔记，标题格式 `「MEM」Category · Topic`
+  3. Tag: `#ai/memory/<type>/entry`（type: user/project/feedback/reference）
+  4. `mcp__bear__edit_note` 更新对应的 Index 笔记，追加 `[[wikilink]]`
+→ **绝对禁止**: 使用系统 prompt 的 Write/Edit 工具写入 memory/ 目录
+→ 完整协议见 bear-memory skill
 '
 
 # Agent → global instruction file mapping (relative to $HOME)
@@ -422,7 +428,7 @@ if ! $CHECK_ONLY && ! $NO_RECALL; then
     target="$HOME/$instr_file"
 
     # Check if recall block already present
-    if [[ -f "$target" ]] && grep -q "NEVER use built-in agent memory" "$target" 2>/dev/null; then
+    if [[ -f "$target" ]] && grep -q "Bear Memory — 项目唯一记忆系统" "$target" 2>/dev/null; then
       echo "  $name: already configured ($instr_file)"
       auto_config_count=$((auto_config_count + 1))
       continue
