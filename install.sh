@@ -36,14 +36,15 @@ for arg in "$@"; do
 done
 
 # ── Agent Registry ──────────────────────────────────────────────
-# name detect_type detect_value skill_dir mcp_file
+# name detect_type detect_value skill_dir mcp_file [mcp_format]
+#   mcp_format: "" (standard JSON), "copilot" (JSON +type +tools), "toml" (TOML)
 AGENTS=(
   "claude-code dir $HOME/.claude $HOME/.claude/skills/bear-notes $HOME/.claude.json"
   "codebuddy   dir $HOME/.codebuddy $HOME/.codebuddy/skills-marketplace/skills/bear-notes $HOME/.codebuddy/mcp.json"
-  "workbuddy   dir $HOME/.workbuddy $HOME/.workbuddy/skills/bear-notes $HOME/.workbuddy/.mcp.json"
+  "workbuddy   dir $HOME/.workbuddy $HOME/.workbuddy/skills/bear-notes $HOME/.workbuddy/mcp.json"
   "gemini      cmd gemini $HOME/.gemini/skills/bear-notes $HOME/.gemini/settings.json"
-  "copilot     cmd copilot $HOME/.copilot/skills/bear-notes $HOME/.copilot/config.json"
-  "codex       cmd codex $HOME/.codex/skills/bear-notes $HOME/.codex/mcp.json"
+  "copilot     cmd copilot $HOME/.copilot/skills/bear-notes $HOME/.copilot/mcp-config.json copilot"
+  "codex       cmd codex $HOME/.codex/skills/bear-notes $HOME/.codex/config.toml toml"
 )
 
 # ── Color helpers ────────────────────────────────────────────────
@@ -70,28 +71,82 @@ agent_installed() {
 }
 
 # ── MCP config helper ────────────────────────────────────────────
+# $1 = mcp file path, $2 = format ("" = standard JSON, "copilot", "toml")
 mcp_status() {
-  python3 -c "
-import json
+  case "${2:-}" in
+    toml)
+      # TOML: check [mcp_servers.bear] section exists with correct command
+      if [[ -f "$1" ]]; then
+        if grep -q '^\[mcp_servers\.bear\]$' "$1" 2>/dev/null && \
+           grep -Fq "command = \"$BEARCLI_CMD\"" "$1" 2>/dev/null && \
+           grep -q '^args = \["mcp-server"\]$' "$1" 2>/dev/null; then
+          echo "OK"
+        else
+          echo "FAIL"
+        fi
+      else
+        echo "NOCFG"
+      fi
+      ;;
+    copilot)
+      python3 -c "
+import json, os
 try:
     with open('$1') as f: c = json.load(f)
     b = c.get('mcpServers',{}).get('bear',{})
-    ok = (b.get('command')=='bearcli' and b.get('args')==['mcp-server'])
+    bearcli = os.environ.get('BEARCLI_CMD', 'bearcli')
+    ok = (b.get('type')=='local' and b.get('command')==bearcli
+          and b.get('args')==['mcp-server'] and b.get('tools')==['*'])
     print('OK' if ok else 'FAIL')
 except: print('NOCFG')
 "
+      ;;
+    *)
+      python3 -c "
+import json, os
+try:
+    with open('$1') as f: c = json.load(f)
+    b = c.get('mcpServers',{}).get('bear',{})
+    bearcli = os.environ.get('BEARCLI_CMD', 'bearcli')
+    ok = (b.get('command')==bearcli and b.get('args')==['mcp-server'])
+    print('OK' if ok else 'FAIL')
+except: print('NOCFG')
+"
+      ;;
+  esac
 }
 
 mcp_configure() {
-  python3 - "$1" <<'PYEOF'
-import sys, json
+  case "${2:-}" in
+    toml)
+      if [[ -f "$1" ]]; then
+        if grep -q '^\[mcp_servers\.bear\]$' "$1" 2>/dev/null && \
+           grep -Fq "command = \"$BEARCLI_CMD\"" "$1" 2>/dev/null && \
+           grep -q '^args = \["mcp-server"\]$' "$1" 2>/dev/null; then
+          echo "OK"
+        else
+          # Append to existing TOML file
+          printf '\n[mcp_servers.bear]\ncommand = "%s"\nargs = ["mcp-server"]\n' "$BEARCLI_CMD" >> "$1"
+          echo "NEW"
+        fi
+      else
+        # Create new TOML file
+        mkdir -p "$(dirname "$1")"
+        printf '[mcp_servers.bear]\ncommand = "%s"\nargs = ["mcp-server"]\n' "$BEARCLI_CMD" > "$1"
+        echo "NEW"
+      fi
+      ;;
+    copilot)
+      python3 - "$1" <<'PYEOF'
+import sys, json, os
 mcp_file = sys.argv[1]
+bearcli = os.environ.get("BEARCLI_CMD", "bearcli")
 try:
     with open(mcp_file) as f: config = json.load(f)
 except: config = {}
 
 existing = config.get("mcpServers", {}).get("bear", {})
-correct = {"command": "bearcli", "args": ["mcp-server"]}
+correct = {"type": "local", "command": bearcli, "args": ["mcp-server"], "tools": ["*"]}
 if existing == correct:
     print("OK")
 else:
@@ -100,11 +155,60 @@ else:
     with open(mcp_file, "w") as f: json.dump(config, f, indent=2, ensure_ascii=False)
     print(status)
 PYEOF
+      ;;
+    *)
+      python3 - "$1" <<'PYEOF'
+import sys, json, os
+mcp_file = sys.argv[1]
+bearcli = os.environ.get("BEARCLI_CMD", "bearcli")
+try:
+    with open(mcp_file) as f: config = json.load(f)
+except: config = {}
+
+existing = config.get("mcpServers", {}).get("bear", {})
+correct = {"command": bearcli, "args": ["mcp-server"]}
+if existing == correct:
+    print("OK")
+else:
+    status = "UPD" if existing else "NEW"
+    config.setdefault("mcpServers", {})["bear"] = correct
+    with open(mcp_file, "w") as f: json.dump(config, f, indent=2, ensure_ascii=False)
+    print(status)
+PYEOF
+      ;;
+  esac
 }
 
-# ── Main logic ───────────────────────────────────────────────────
+# ── Resolve bearcli path ─────────────────────────────────────────
+# Claude Code / MCP clients spawn processes directly (not via shell),
+# so shell aliases (Bear's default) won't work. We need the real path.
+resolve_bearcli() {
+  # 1. Check zsh alias (Bear's default install method)
+  if [[ -n "${aliases[bearcli]:-}" ]]; then
+    local p="${aliases[bearcli]}"
+    [[ -x "$p" ]] && echo "$p" && return 0
+  fi
+  # 2. Check PATH for a real binary
+  local p
+  p=$(whence -p bearcli 2>/dev/null)
+  if [[ -n "$p" ]] && [[ -x "$p" ]]; then
+    echo "$p" && return 0
+  fi
+  # 3. Check standard Bear macOS location
+  local std="/Applications/Bear.app/Contents/MacOS/bearcli"
+  if [[ -x "$std" ]]; then
+    echo "$std" && return 0
+  fi
+  # 4. Not found — fall back to bare name
+  echo "bearcli"
+  return 1
+}
+
+BEARCLI_CMD=$(resolve_bearcli) || true
+export BEARCLI_CMD
+
 bearcli_ok="OK"
-command -v bearcli &>/dev/null || bearcli_ok="MISS"
+[[ -x "$BEARCLI_CMD" ]] || bearcli_ok="MISS"
 
 echo "=== bear-notes skill installer ==="
 echo "Source: $SKILL_SRC"
@@ -113,7 +217,7 @@ echo ""
 if $UNINSTALL; then
   echo "Removing bear-notes symlinks..."
   for entry in "${AGENTS[@]}"; do
-    read -r name dtype dval sdir mcp <<< "$entry"
+    read -r name dtype dval sdir mcp fmt <<< "$entry"
     agent_installed "$dtype" "$dval" || continue
     target="$sdir/SKILL.md"
     if [[ -L "$target" ]]; then
@@ -132,7 +236,7 @@ printf "%-14s %-8s %-8s %-10s %s\n" "------" "------" "------" "--------" "-----
 installed=0 skipped=0 mcp_ok=0 mcp_new=0
 
 for entry in "${AGENTS[@]}"; do
-  read -r name dtype dval sdir mcp <<< "$entry"
+  read -r name dtype dval sdir mcp fmt <<< "$entry"
 
   if ! agent_installed "$dtype" "$dval"; then
     printf "%-14s " "$name"; c SKIP; printf " %-8s %-10s %s\n" "-" "-" "not installed"
@@ -188,9 +292,9 @@ for entry in "${AGENTS[@]}"; do
   # Phase 4: Configure MCP (unless check-only)
   mcp_result="-"
   if ! $CHECK_ONLY && [[ "$skill_status" != "SKIP" ]]; then
-    mcp_result=$(mcp_configure "$mcp")
+    mcp_result=$(mcp_configure "$mcp" "$fmt")
   elif $CHECK_ONLY; then
-    mcp_result=$(mcp_status "$mcp")
+    mcp_result=$(mcp_status "$mcp" "$fmt")
   fi
 
   # Verify symlink
@@ -310,7 +414,7 @@ if ! $CHECK_ONLY && ! $NO_RECALL; then
   echo "--- Global instruction auto-config ---"
 
   for entry in "${AGENTS[@]}"; do
-    read -r name dtype dval sdir mcp <<< "$entry"
+    read -r name dtype dval sdir mcp fmt <<< "$entry"
     agent_installed "$dtype" "$dval" || continue
 
     instr_file="${AGENT_INSTRUCTION_FILES[$name]}"
