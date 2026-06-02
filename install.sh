@@ -3,6 +3,7 @@ set -uo pipefail
 
 SCRIPT_DIR="${0:A:h}"
 SKILL_SRC="$SCRIPT_DIR/SKILL.md"
+MEMORY_SKILL_SRC="$SCRIPT_DIR/memory/SKILL.md"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -222,7 +223,12 @@ if $UNINSTALL; then
     target="$sdir/SKILL.md"
     if [[ -L "$target" ]]; then
       rm "$target"
-      echo "  $name: removed symlink"
+      echo "  $name: removed bear-notes"
+    fi
+    memory_target="$(dirname "$sdir")/bear-memory/SKILL.md"
+    if [[ -L "$memory_target" ]]; then
+      rm "$memory_target"
+      echo "  $name: removed bear-memory"
     fi
   done
   echo "MCP configurations preserved. Remove manually if needed."
@@ -230,8 +236,8 @@ if $UNINSTALL; then
 fi
 
 # Print header
-printf "%-14s %-8s %-8s %-10s %s\n" "Agent" "Skill" "MCP" "bearcli" "Notes"
-printf "%-14s %-8s %-8s %-10s %s\n" "------" "------" "------" "--------" "-----"
+printf "%-14s %-8s %-8s %-10s %-8s %s\n" "Agent" "Skill" "MCP" "bearcli" "Memory" "Notes"
+printf "%-14s %-8s %-8s %-10s %-8s %s\n" "------" "------" "------" "--------" "------" "-----"
 
 installed=0 skipped=0 mcp_ok=0 mcp_new=0
 
@@ -239,7 +245,7 @@ for entry in "${AGENTS[@]}"; do
   read -r name dtype dval sdir mcp fmt <<< "$entry"
 
   if ! agent_installed "$dtype" "$dval"; then
-    printf "%-14s " "$name"; c SKIP; printf " %-8s %-10s %s\n" "-" "-" "not installed"
+    printf "%-14s " "$name"; c SKIP; printf " %-8s %-10s %-8s %s\n" "-" "-" "-" "not installed"
     skipped=$((skipped + 1))
     continue
   fi
@@ -302,6 +308,29 @@ for entry in "${AGENTS[@]}"; do
     skill_status="OK"
   fi
 
+  # Phase 4.5: Install bear-memory skill
+  memory_target="$(dirname "$sdir")/bear-memory/SKILL.md"
+  memory_status=""
+  if ! $CHECK_ONLY && [[ "$skill_status" != "SKIP" ]]; then
+    if [[ -L "$memory_target" ]] && [[ "$(readlink "$memory_target")" == "$MEMORY_SKILL_SRC" ]]; then
+      memory_status="OK"
+    elif [[ -f "$MEMORY_SKILL_SRC" ]]; then
+      mkdir -p "$(dirname "$memory_target")"
+      ln -sf "$MEMORY_SKILL_SRC" "$memory_target"
+      memory_status="NEW"
+    fi
+  elif $CHECK_ONLY; then
+    if [[ -L "$memory_target" ]] && [[ "$(readlink "$memory_target")" == "$MEMORY_SKILL_SRC" ]]; then
+      memory_status="OK"
+    elif [[ -f "$MEMORY_SKILL_SRC" ]]; then
+      memory_status="FAIL"
+    else
+      memory_status="N/A"
+    fi
+  else
+    memory_status="-"
+  fi
+
   # Print row
   printf "%-14s " "$name"
   c "${skill_status:-FAIL}"
@@ -309,6 +338,8 @@ for entry in "${AGENTS[@]}"; do
   c "${mcp_result:--}"
   printf " "
   c "$bearcli_ok"
+  printf " "
+  c "${memory_status:--}"
   printf " %s\n" "${skill_note:-}"
 
   installed=$((installed + 1))
