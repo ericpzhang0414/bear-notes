@@ -421,6 +421,7 @@ RECALL_BLOCK='
 ### RULE 2: 相关话题时搜索记忆
 → **触发词**: 规则/规范/约定/流程/之前/上次/习惯/偏好/工作方式/开发方式/项目知识/rules/conventions/workflow/preferences
 → **动作**: 使用 `mcp__bear__search_notes` 搜索 #ai/memory 后再回答
+→ ⚠️ 搜索时只用 #ai/memory，不加类型限定（/user/project/feedback/reference）。不要预判记忆类型。
 → 不要依赖会话开始时加载的记忆——可能已过期
 
 ### RULE 3: 主动写入新记忆
