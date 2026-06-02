@@ -177,11 +177,18 @@ Note: Tag changes in Bear must follow the **Tag Operation Protocol** in bear-not
 ```
 1. Classify the memory → determine type
 2. Build the memory body (1-3 sentences) + source line
-3. Check for a groupable topic note:
+3. **REQUIRED — do NOT skip.** Run semantic grouping before any write:
+   ```
    python3 memory/search.py --find-group "<body text>" --type <type>
-   → returns {"note_id": "...", "similarity": N} or {}
+   ```
+   → returns `{"note_id": "...", "similarity": N}` or `{}`
 
-   a. If match found (similarity ≥ 0.48):
+   ⚠️ Manual keyword search (`search_notes`) is NOT a substitute for this step.
+   Two memories may use different keywords but have identical semantics
+   (e.g., "方案中文输出" and "优先使用中文" both describe 中文 language preference).
+   An empty keyword search does NOT mean no matching topic note exists.
+
+   → If match found (similarity ≥ 0.48):
       - get_note(id=note_id, includeContent=true) → get content + title
       - Build the new section content:
         \n\n## <section title>\n<!-- type: <type> agent: <agent> confidence: <confidence> updated: <date> -->\n\n<body>\n\n> source
@@ -204,6 +211,9 @@ Note: Tag changes in Bear must follow the **Tag Operation Protocol** in bear-not
         > source
       - create_note(title, content, tags: ["ai/memory/<type>/entry"])
         → returns note_id, hash
+      - **RUN bear-notes Format Validation immediately** (check tag is on line 2, fix if blank-line bug)
+      - **Memory-specific check:** verify `<!-- updated: <date> -->` on line 4,
+        each `##` section has a valid metadata comment on the next line
       - embed.py --update <note_id>
 
 4. Find or create the index note for this type:

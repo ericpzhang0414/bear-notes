@@ -316,7 +316,9 @@ get_note(id, includeContent:false)
 ```
 1. Include the tag on line 2 of content (tags param places tags at bottom per Bear setting)
 2. create_note(title, content: "# Title\n#tag\n\nBody...", tags: ["tag"]) → returns id, hash
-3. (optional) get_note(id) verify
+3. MUST run [Format Validation](#note-format-validation) — NOT optional.
+   create_note often inserts a blank line before the tag (tag ends up on line 3).
+   Catch and fix this immediately.
 ```
 
 **Generic body edit:**
@@ -346,6 +348,30 @@ get_note(id, includeContent:false)
 | Tag on line 2 | `read_note_content(id)` → check first 4 lines |
 | Duplicates today | `search_notes(query: "@today")` → inspect titles |
 | Tag counts | `search_notes(query: "#tag")` → array length |
+
+### Note Format Validation
+
+**Every create_note MUST be followed by this check immediately — no exceptions.**
+
+```
+1. create_note(...) → returns id
+2. read_note_content(id) → check first 3 lines:
+
+   Line 1: # Title          ← must be the title, not blank
+   Line 2: #tag             ← must be the tag line, NOT blank
+   Line 3:                  ← must be blank
+
+3. If line 2 is blank (tag appears on line 3 → "double-blank bug"):
+   edit_note immediately:
+     find:    "# {title}\n\n#tag"
+     replace: "# {title}\n#tag"
+   
+4. Confirm: get_note(id, includeContent:false) → tags field correct
+```
+
+This check takes < 1 second per note and prevents the most common formatting bug
+in the entire workflow. Do NOT skip it — even (especially) when creating many notes
+in parallel.
 
 ### Known Issues (Verified 2026-05-29)
 
