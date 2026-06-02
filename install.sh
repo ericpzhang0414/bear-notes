@@ -487,6 +487,88 @@ if ! $CHECK_ONLY && ! $NO_RECALL; then
   fi
 fi
 
+# ── Phase Z: MCP permission auto-config ───────────────────────────
+# Adds common read-only Bear MCP operations to the project's
+# .claude/settings.local.json to reduce permission prompts.
+# Idempotent — skips entries already present.
+
+BEAR_MCP_ALLOWLIST=(
+  "mcp__bear__search_notes"
+  "mcp__bear__get_note"
+  "mcp__bear__read_note_content"
+  "mcp__bear__search_in_note"
+  "mcp__bear__list_tags"
+  "mcp__bear__list_notes"
+  "mcp__bear__list_attachments"
+  "mcp__bear__append_to_note"
+  "mcp__bear__archive_note"
+  "mcp__bear__restore_note"
+  "mcp__bear__open_note"
+  "mcp__bear__edit_note"
+  "mcp__bear__create_note"
+  "mcp__bear__overwrite_note"
+  "mcp__bear__trash_note"
+)
+
+SETTINGS_FILE="$SCRIPT_DIR/.claude/settings.local.json"
+
+if ! $CHECK_ONLY; then
+  echo ""
+  echo "--- MCP permission auto-config ---"
+
+  # Create or load settings file
+  if [[ -f "$SETTINGS_FILE" ]]; then
+    # Parse existing allow list
+    existing=$(python3 -c "
+import json
+with open('$SETTINGS_FILE') as f:
+    cfg = json.load(f)
+for item in cfg.get('permissions',{}).get('allow',[]):
+    print(item)
+" 2>/dev/null)
+  else
+    mkdir -p "$(dirname "$SETTINGS_FILE")"
+    echo '{"permissions":{"allow":[]}}' > "$SETTINGS_FILE"
+    existing=""
+  fi
+
+  added=0 skipped=0
+  for entry in "${BEAR_MCP_ALLOWLIST[@]}"; do
+    if echo "$existing" | grep -qF "$entry" 2>/dev/null; then
+      skipped=$((skipped + 1))
+    else
+      # Append to allow array
+      python3 -c "
+import json
+with open('$SETTINGS_FILE') as f:
+    cfg = json.load(f)
+cfg.setdefault('permissions',{}).setdefault('allow',[]).append('$entry')
+with open('$SETTINGS_FILE','w') as f:
+    json.dump(cfg, f, indent=2, ensure_ascii=False)
+    f.write('\n')
+" 2>/dev/null && added=$((added + 1))
+    fi
+  done
+
+  echo "  Bear MCP: $added added, $skipped already configured"
+else
+  echo ""
+  echo "--- MCP permission check (read-only) ---"
+  if [[ -f "$SETTINGS_FILE" ]]; then
+    configured=$(python3 -c "
+import json
+with open('$SETTINGS_FILE') as f:
+    cfg = json.load(f)
+allow = cfg.get('permissions',{}).get('allow',[])
+missing = [e for e in ['mcp__bear__search_notes','mcp__bear__get_note','mcp__bear__read_note_content'] if e not in allow]
+print(len(allow) if not missing else 'MISSING: ' + ', '.join(missing))
+")
+    echo "  Bear MCP: $configured"
+  else
+    echo "  Bear MCP: no settings file"
+  fi
+fi
+
 echo ""
 echo -e "Summary: ${GREEN}$installed installed${NC}, $skipped skipped (not detected)"
 echo -e "MCP:     $mcp_ok already configured, $mcp_new newly configured"
