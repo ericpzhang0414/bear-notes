@@ -4,6 +4,7 @@ set -uo pipefail
 SCRIPT_DIR="${0:A:h}"
 SKILL_SRC="$SCRIPT_DIR/SKILL.md"
 MEMORY_SKILL_SRC="$SCRIPT_DIR/memory/SKILL.md"
+GTD_SKILL_SRC="$SCRIPT_DIR/gtd/SKILL.md"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -230,14 +231,19 @@ if $UNINSTALL; then
       rm "$memory_target"
       echo "  $name: removed bear-memory"
     fi
+    gtd_target="$(dirname "$sdir")/bear-gtd/SKILL.md"
+    if [[ -L "$gtd_target" ]]; then
+      rm "$gtd_target"
+      echo "  $name: removed bear-gtd"
+    fi
   done
   echo "MCP configurations preserved. Remove manually if needed."
   exit 0
 fi
 
 # Print header
-printf "%-14s %-8s %-8s %-10s %-8s %s\n" "Agent" "Skill" "MCP" "bearcli" "Memory" "Notes"
-printf "%-14s %-8s %-8s %-10s %-8s %s\n" "------" "------" "------" "--------" "------" "-----"
+printf "%-14s %-8s %-8s %-10s %-8s %-8s %s\n" "Agent" "Skill" "MCP" "bearcli" "Memory" "Gtd" "Notes"
+printf "%-14s %-8s %-8s %-10s %-8s %-8s %s\n" "------" "------" "------" "--------" "------" "------" "-----"
 
 installed=0 skipped=0 mcp_ok=0 mcp_new=0
 
@@ -331,6 +337,29 @@ for entry in "${AGENTS[@]}"; do
     memory_status="-"
   fi
 
+  # Phase 4.6: Install bear-gtd skill
+  gtd_target="$(dirname "$sdir")/bear-gtd/SKILL.md"
+  gtd_status=""
+  if ! $CHECK_ONLY && [[ "$skill_status" != "SKIP" ]]; then
+    if [[ -L "$gtd_target" ]] && [[ "$(readlink "$gtd_target")" == "$GTD_SKILL_SRC" ]]; then
+      gtd_status="OK"
+    elif [[ -f "$GTD_SKILL_SRC" ]]; then
+      mkdir -p "$(dirname "$gtd_target")"
+      ln -sf "$GTD_SKILL_SRC" "$gtd_target"
+      gtd_status="NEW"
+    fi
+  elif $CHECK_ONLY; then
+    if [[ -L "$gtd_target" ]] && [[ "$(readlink "$gtd_target")" == "$GTD_SKILL_SRC" ]]; then
+      gtd_status="OK"
+    elif [[ -f "$GTD_SKILL_SRC" ]]; then
+      gtd_status="FAIL"
+    else
+      gtd_status="N/A"
+    fi
+  else
+    gtd_status="-"
+  fi
+
   # Print row
   printf "%-14s " "$name"
   c "${skill_status:-FAIL}"
@@ -340,6 +369,8 @@ for entry in "${AGENTS[@]}"; do
   c "$bearcli_ok"
   printf " "
   c "${memory_status:--}"
+  printf " "
+  c "${gtd_status:--}"
   printf " %s\n" "${skill_note:-}"
 
   installed=$((installed + 1))
