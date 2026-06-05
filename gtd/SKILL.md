@@ -32,7 +32,7 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 ## Item Format
 
 ```
-- [ ] `[L]` `📋 task` description
+- [ ] `[L]` `📌 task` description
     > context / detail
     > 📅 YYYY-MM-DD
     > 📍 location
@@ -60,7 +60,7 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 | 🔎 `research` | Research / evaluate | Tech spike, solution evaluation |
 | 🐛 `bug` | Fix issues | Bugs, crashes, online issues |
 | 🧪 `test` | Test / QA | Unit test, integration test, QA |
-| 📋 `task` | Errand / admin | Documents, shopping, appointments, medical |
+| 📌 `task` | Errand / admin | Documents, shopping, appointments, medical |
 | ✈️ `trip` | Travel | Flights, hotels, itinerary |
 | 🔧 `fix` | Repair / maintain | Car, home, appliances |
 
