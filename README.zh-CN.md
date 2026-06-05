@@ -22,23 +22,25 @@ cd bear-notes
 ./install.sh
 ```
 
-自动执行 7 个阶段：
+自动执行 8 个阶段：
 1. 检测已安装的代理（Claude Code / CodeBuddy / WorkBuddy / Gemini / Copilot / Codex）
 2. 检查旧版本（如有则备份）
 3. 通过软链接安装技能
 4. 为各代理配置 Bear MCP
 5. 安装记忆系统（Python 依赖 + 嵌入索引重建）
 6. 在各代理全局指令中配置主动记忆召回
-7. 验证安装并输出报告
+7. 配置 Claude Code SessionStart hook（自动注入 feedback 记忆）
+8. 验证安装并输出报告
 
 ### 选项
 
 ```
-./install.sh              # 自动检测、安装、配置 MCP、部署记忆系统、配置召回、验证
+./install.sh              # 自动检测、安装、配置 MCP、部署记忆系统、配置召回、hook、验证
 ./install.sh --check      # 仅验证，不作修改
 ./install.sh --force      # 覆盖旧版本时跳过确认
 ./install.sh --no-memory  # 跳过记忆系统部署（pip 安装 + 索引重建）
 ./install.sh --no-recall  # 跳过全局指令自动配置
+./install.sh --no-hook    # 跳过 SessionStart hook 配置
 ./install.sh --uninstall  # 移除所有软链接（MCP 配置保留）
 ```
 
@@ -122,6 +124,18 @@ bear-notes/
 | **RULE 3** | 学到新用户事实或纠正 | 立即写入记忆（详见 bear-memory skill） |
 
 跳过此步骤：`./install.sh --no-recall`
+
+### SessionStart Hook（仅 Claude Code）
+
+对 Claude Code，`install.sh` 额外配置 `SessionStart` hook，在每次会话启动时自动注入 `#ai/memory/feedback/entry` 记忆。这是系统级机制——Claude Code 自动执行 hook，agent 无法跳过。
+
+| Hook | 范围 | 原理 |
+|------|------|------|
+| `~/.claude/settings.json` → `hooks.SessionStart` | 仅 `#ai/memory/feedback/entry` | `memory/recall.py` → stdout 注入上下文 |
+
+只注入 feedback：行为修正是最高优先级的记忆——agent 必须知道以避免重复犯错。用户偏好和项目上下文通过 RULE 2 按需加载。
+
+跳过：`./install.sh --no-hook`
 
 ## 更新
 

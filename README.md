@@ -29,16 +29,18 @@ Runs 7 phases automatically:
 4. Configure Bear MCP for each agent
 5. Install memory system (Python deps + embedding index rebuild)
 6. Configure proactive memory recall in agent global instructions
-7. Verify installation and print report
+7. Configure Claude Code SessionStart hook (auto-inject feedback memories)
+8. Verify installation and print report
 
 ### Options
 
 ```
-./install.sh              # Auto-detect, install, configure MCP, setup memory, configure recall, verify
+./install.sh              # Auto-detect, install, configure MCP, setup memory, configure recall, configure hook, verify
 ./install.sh --check      # Verify only, no changes
 ./install.sh --force      # Skip confirmation on old version replacement
 ./install.sh --no-memory  # Skip memory system setup (pip install + index rebuild)
 ./install.sh --no-recall  # Skip global instruction auto-config
+./install.sh --no-hook    # Skip SessionStart hook configuration
 ./install.sh --uninstall  # Remove all symlinks (MCP config preserved)
 ```
 
@@ -96,6 +98,7 @@ bear-notes/
 │   ├── SKILL.md          # Memory sub-skill (proactive protocol + format + operations)
 │   ├── embed.py          # Embedding builder + index + migrate-plan
 │   ├── search.py         # Semantic search + find-group
+│   ├── recall.py         # SessionStart hook — inject feedback memories
 │   └── requirements.txt
 └── docs/                 # Design documents
 ```
@@ -122,6 +125,18 @@ The injected block uses a 3-RULE structure with explicit TRIGGER → ACTION patt
 | **RULE 3** | Learn new user fact or correction | Write memory immediately (see bear-memory skill) |
 
 To skip this step: `./install.sh --no-recall`
+
+### SessionStart Hook (Claude Code only)
+
+For Claude Code, `install.sh` additionally configures a `SessionStart` hook that injects `#ai/memory/feedback/entry` memories at every session start. This is a system-level mechanism — Claude Code executes the hook automatically; the agent cannot skip it.
+
+| Hook | Scope | Mechanism |
+|------|-------|-----------|
+| `~/.claude/settings.json` → `hooks.SessionStart` | `#ai/memory/feedback/entry` only | `memory/recall.py` → stdout injected into context |
+
+Why feedback only: behavioral corrections are the highest-priority memories — the agent must know them to avoid repeating mistakes. User preferences and project context are loaded on-demand via RULE 2.
+
+To skip: `./install.sh --no-hook`
 
 ## Update
 

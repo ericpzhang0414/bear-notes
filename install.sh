@@ -17,6 +17,7 @@ UNINSTALL=false
 FORCE=false
 NO_MEMORY=false
 NO_RECALL=false
+NO_HOOK=false
 
 for arg in "$@"; do
   case "$arg" in
@@ -25,6 +26,7 @@ for arg in "$@"; do
     --force) FORCE=true ;;
     --no-memory) NO_MEMORY=true ;;
     --no-recall) NO_RECALL=true ;;
+    --no-hook) NO_HOOK=true ;;
     --help|-h)
       echo "Usage: ./install.sh [--check] [--uninstall] [--force] [--no-memory]"
       echo "  (no args)  Auto-detect agents, install skill + MCP + memory"
@@ -602,6 +604,69 @@ print(len(allow) if not missing else 'MISSING: ' + ', '.join(missing))
   fi
 fi
 
+# ── Phase Z2: SessionStart hook (Claude Code only) ─────────────────
+hook_configured=0
+if ! $CHECK_ONLY && ! $NO_HOOK; then
+  echo ""
+  echo "--- SessionStart hook ---"
+
+  cc_settings="$HOME/.claude/settings.json"
+  recall_script="$SCRIPT_DIR/memory/recall.py"
+
+  python3 - "$cc_settings" "$recall_script" <<'PYEOF'
+import json, sys
+
+settings_file = sys.argv[1]
+recall_path = sys.argv[2]
+recall_command = f"python3 {recall_path}"
+
+try:
+    with open(settings_file) as f:
+        config = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    config = {}
+
+if "hooks" not in config:
+    config["hooks"] = {}
+
+existing = config["hooks"].get("SessionStart", [])
+already_configured = any(recall_command in json.dumps(h) for h in existing)
+
+if already_configured:
+    print("  Claude Code: SessionStart hook already configured")
+    sys.exit(0)
+
+new_hook = {
+    "matcher": "startup",
+    "hooks": [{"type": "command", "command": recall_command}]
+}
+config["hooks"]["SessionStart"] = existing + [new_hook]
+
+with open(settings_file, "w") as f:
+    json.dump(config, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+
+print("  Claude Code: SessionStart hook configured -> recall.py")
+PYEOF
+  hook_configured=$?
+elif $CHECK_ONLY; then
+  cc_settings="$HOME/.claude/settings.json"
+  recall_script="$SCRIPT_DIR/memory/recall.py"
+  if python3 -c "
+import json
+try:
+    with open('$cc_settings') as f: cfg = json.load(f)
+    for h in cfg.get('hooks',{}).get('SessionStart',[]):
+        if 'recall.py' in json.dumps(h): exit(0)
+    exit(1)
+except: exit(1)
+" 2>/dev/null; then
+    echo "  Claude Code: SessionStart hook already configured"
+  else
+    echo "  Claude Code: SessionStart hook not configured"
+  fi
+fi
+
 echo ""
 echo -e "Summary: ${GREEN}$installed installed${NC}, $skipped skipped (not detected)"
 echo -e "MCP:     $mcp_ok already configured, $mcp_new newly configured"
@@ -611,3 +676,4 @@ if ! $NO_MEMORY; then
   echo ""
 fi
 echo -e "Recall:  $auto_config_count agents configured"
+echo -e "Hook:    SessionStart $([ $hook_configured -eq 0 ] && echo 'configured' || echo 'skipped')"
