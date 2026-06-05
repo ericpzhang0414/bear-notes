@@ -32,7 +32,7 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 ## Item Format
 
 ```
-- [ ] `[L]` 📋 `task` description
+- [ ] `[L]` `📋 task` description
     > context / detail
     > 📅 YYYY-MM-DD
     > 📍 location
@@ -41,7 +41,7 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 
 - **Checkbox:** `- [ ]` active, `- [x]` done (then archive)
 - **Domain (required):** `` `[L]` `` Life or `` `[W]` `` Work, in backticks for monospace alignment
-- **Type (required):** emoji + `` `type` `` (see table). Unified by activity type.
+- **Type (required):** `` `emoji type` `` in backticks (see table). Unified by activity type.
 - **Item descriptor:** clear action description after the markers — no project prefix needed
 - **Blockquote order:** content → 📅 time → 📍 location → from source
 - **Sort order:** all `[L]` items before all `[W]` items within each section
