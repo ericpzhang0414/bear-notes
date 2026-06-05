@@ -32,19 +32,38 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 ## Item Format
 
 ```
-- [ ] `[L]` `📌 task` description
+- [ ] `[L]` `📌 日常` description
     > context / detail
     > 📅 YYYY-MM-DD
     > 📍 location
     > from @source
+- [ ] 🌟 `[L]` `📌 日常` urgent description
 ```
 
 - **Checkbox:** `- [ ]` active, `- [x]` done (then archive)
+- **Priority (optional):** `🌟` after checkbox, before domain. Marks urgent/important items — they sort first within their domain. Only use when truly needed.
 - **Domain (required):** `` `[L]` `` Life or `` `[W]` `` Work, in backticks for monospace alignment
-- **Type (required):** `` `emoji type` `` in backticks (see table). Unified by activity type.
+- **Type (required):** `` `emoji 中文` `` in backticks (see table). Unified by activity type.
 - **Item descriptor:** clear action description after the markers — no project prefix needed
 - **Blockquote order:** content → 📅 time → 📍 location → from source
-- **Sort order:** all `[L]` items before all `[W]` items within each section
+- **Sort order within each section:**
+  1. `[L]` items before `[W]` items
+  2. Within same domain: 🌟 items before non-🌟 items
+  3. Within same domain × 🌟 group:
+     a. Items with `📅 YYYY-MM-DD` date → ascending by date (soonest first; overdue even sooner)
+     b. Items without date → after all dated items, newest-added first
+  → Date source: `📅 YYYY-MM-DD` in description line or blockquote `> 📅 YYYY-MM-DD`
+
+### 🌟 Detection (during batch organize)
+
+Scope: item description line (after markers, excluding blockquote `> ` lines).
+
+| Source | Rule |
+|--------|------|
+| User manually placed `🌟` anywhere in item | Normalize to standard position (after checkbox, before domain). If already in standard position, skip. |
+| Keywords: 紧急, 重要, 高优先, ASAP, urgent | Auto-mark 🌟 — show in summary as "auto-detected" for user review. Case-insensitive for English keywords. |
+| Dedup | If 🌟 already applied (manual or auto), skip further auto-marking for this item. |
+| Negation guard | If keyword is negated (不紧急, 不重要, not urgent), do NOT auto-mark. |
 
 ## Domain & Type Markers
 
@@ -54,15 +73,15 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 ### Type (unified by activity, not domain)
 | Marker | Activity | Examples |
 |--------|----------|---------|
-| 💻 `dev` | Develop / implement | Feature, code |
-| 👀 `review` | Review / inspect | Code review, visual QA |
-| 🤖 `ai` | AI / tools | AI-Coding, automation |
-| 🔎 `research` | Research / evaluate | Tech spike, solution evaluation |
-| 🐛 `bug` | Fix issues | Bugs, crashes, online issues |
-| 🧪 `test` | Test / QA | Unit test, integration test, QA |
-| 📌 `task` | Errand / admin | Documents, shopping, appointments, medical |
-| ✈️ `trip` | Travel | Flights, hotels, itinerary |
-| 🔧 `fix` | Repair / maintain | Car, home, appliances |
+| 💻 `开发` | Develop / implement | Feature, code |
+| 👀 `评审` | Review / inspect | Code review, visual QA |
+| 🤖 `智能` | AI / tools | AI-Coding, automation |
+| 🔎 `调研` | Research / evaluate | Tech spike, solution evaluation |
+| 🐛 `修复` | Fix issues | Bugs, crashes, online issues |
+| 🧪 `测试` | Test / QA | Unit test, integration test, QA |
+| 📌 `日常` | Errand / admin | Documents, shopping, appointments, medical |
+| ✈️ `出行` | Travel | Flights, hotels, itinerary |
+| 🔧 `维修` | Repair / maintain | Car, home, appliances |
 
 ## Operations
 
@@ -83,14 +102,16 @@ Determine domain, type, and section from the user. Default to Index Box if uncle
 **Into an empty section** — anchor on the section boundary:
 ```
 find:    "## 📥 Index Box\n\n## 📋 Next Actions"
-replace: "## 📥 Index Box\n\n- [ ] `[W]` `dev` new task\n\n## 📋 Next Actions"
+replace: "## 📥 Index Box\n\n- [ ] `[W]` `开发` new task\n\n## 📋 Next Actions"
 ```
 
-**Into a populated section** — find the correct insertion point maintaining L before W within the section:
-- Scan existing items, identify the last `[L]` item and last `[W]` item
-- Insert new `[L]` item before the first `[W]` item (or before next section if no `[W]`)
-- Insert new `[W]` item after the last `[W]` item (or after last `[L]` if no `[W]`)
-- Use the boundary between the last item and next section as the anchor
+**Into a populated section** — find the correct insertion point respecting all sort rules:
+
+1. **Identify target group** (L🌟 / L / W🌟 / W) based on domain and 🌟 status
+2. **Within that group, find date-based position:**
+   - If new item has `📅 YYYY-MM-DD`: insert so dates stay ascending (soonest first). Scan existing dated items in group, find where new date fits chronologically.
+   - If new item has no date: insert after the last dated item in group, before the first undated item (undated items sorted newest first).
+3. **Edge cases:** If target group is empty, insert at group boundary. Use adjacent item or section boundary as anchor.
 
 ### Update a task
 Use exact text match of the current item line. Ask the user what to change (description, type, domain, or notes).
@@ -110,10 +131,10 @@ Use two atomic edits in a single `edit_note` call:
 Example: Move item from Index Box to Next Actions:
 ```
 edits: [
-  {find: "- [ ] `[W]` `dev` task name\n\n## 📋 Next Actions",
+  {find: "- [ ] `[W]` `开发` task name\n\n## 📋 Next Actions",
    replace: "## 📋 Next Actions"},
   {find: "last item in Next Actions\n\n## 💡 Someday",
-   replace: "last item in Next Actions\n- [ ] `[W]` `dev` task name\n\n## 💡 Someday"}
+   replace: "last item in Next Actions\n- [ ] `[W]` `开发` task name\n\n## 💡 Someday"}
 ]
 ```
 
@@ -134,7 +155,7 @@ Multi-step operation across two notes. Not atomic — verify each step.
 **Archive anchor example:**
 ```
 find:    "- [x] last completed item\n\n### WORK"
-replace: "- [x] last completed item\n- [x] `[W]` `dev` done task\n    > 📅 2026-06-05\n\n### WORK"
+replace: "- [x] last completed item\n- [x] `[W]` `开发` done task\n    > 📅 2026-06-05\n\n### WORK"
 ```
 
 ### Weekly review
@@ -156,22 +177,33 @@ Executes 5 steps in order. Bulk operations do NOT need per-item confirmation —
 1. Read Index Box section
 2. Find bare-text entries (no domain/type markers)
 3. Infer domain ([L]/[W]) and type from keywords
-4. Show proposed format → user confirms
-5. edit_note to replace with standard GTD format
+4. 🌟 Detection (per item, description line only, skip if negated: 不紧急/不重要/not urgent):
+   a. Scan for existing 🌟 (any position) → normalize to standard position. If already standard, skip.
+   b. If no 🌟 from step a, scan keywords (紧急/重要/高优先/ASAP/urgent, case-insensitive) → auto-mark 🌟
+   c. Flag auto-detected 🌟 in summary for user review
+5. Show proposed format (with 🌟 annotations) → user confirms
+6. edit_note to replace with standard GTD format
 ```
 
 Format to apply:
 ```
-- [ ] `[L]` `task` 去物业中心拿租房合同
+- [ ] `[L]` `📌 日常` 去物业中心拿租房合同
+- [ ] 🌟 `[L]` `📌 日常` 紧急事项
 ```
 
 **Step 2: Classify Index Box items**
 
-For each item in Index Box, ask user:
-→ Next Actions? / Someday / Maybe? / Delete?
+Auto-classify first, then ask user for remaining items:
 
-- **Next Actions** — move per Move protocol
-- **Someday / Maybe** — move per Move protocol
+```
+For each item in Index Box:
+  ├─ Has future date (📅 YYYY-MM-DD) within ≤ 7 days of today → auto → Next Actions
+  ├─ Contains keywords (今天/明天/这周/尽快/紧急/ASAP) → auto → Next Actions
+  └─ Otherwise → ask user: Next Actions? / Someday / Maybe? / Delete?
+```
+
+Show summary with auto-classified items labeled, user confirms all at once.
+- **Next Actions** / **Someday / Maybe** — move per Move protocol (respecting 🌟 sort order)
 - **Delete** — remove from note entirely (not worth doing, don't keep)
 
 **Step 3: Delete strikethrough items**
