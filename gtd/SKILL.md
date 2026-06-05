@@ -32,7 +32,7 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 ## Item Format
 
 ```
-- [ ] `[L]` `type` task description
+- [ ] `[L]` 📋 `task` description
     > context / detail
     > 📅 YYYY-MM-DD
     > 📍 location
@@ -41,7 +41,7 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 
 - **Checkbox:** `- [ ]` active, `- [x]` done (then archive)
 - **Domain (required):** `` `[L]` `` Life or `` `[W]` `` Work, in backticks for monospace alignment
-- **Type (required):** `` `type` `` in backticks (see table). Unified by activity type.
+- **Type (required):** emoji + `` `type` `` (see table). Unified by activity type.
 - **Item descriptor:** clear action description after the markers — no project prefix needed
 - **Blockquote order:** content → 📅 time → 📍 location → from source
 - **Sort order:** all `[L]` items before all `[W]` items within each section
@@ -54,14 +54,15 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
 ### Type (unified by activity, not domain)
 | Marker | Activity | Examples |
 |--------|----------|---------|
-| `` `dev` `` | Develop / implement | Feature, code |
-| `` `review` `` | Review / test | Code review, QA, visual QA |
-| `` `ai` `` | AI / tools | AI-Coding, automation |
-| `` `research` `` | Research / evaluate | Tech spike, solution evaluation |
-| `` `bug` `` | Fix issues | Bugs, crashes, online issues |
-| `` `task` `` | Errand / admin | Documents, shopping, appointments, medical |
-| `` `trip` `` | Travel | Flights, hotels, itinerary |
-| `` `fix` `` | Repair / maintain | Car, home, appliances |
+| 💻 `dev` | Develop / implement | Feature, code |
+| 👀 `review` | Review / inspect | Code review, visual QA |
+| 🤖 `ai` | AI / tools | AI-Coding, automation |
+| 🔎 `research` | Research / evaluate | Tech spike, solution evaluation |
+| 🐛 `bug` | Fix issues | Bugs, crashes, online issues |
+| 🧪 `test` | Test / QA | Unit test, integration test, QA |
+| 📋 `task` | Errand / admin | Documents, shopping, appointments, medical |
+| ✈️ `trip` | Travel | Flights, hotels, itinerary |
+| 🔧 `fix` | Repair / maintain | Car, home, appliances |
 
 ## Operations
 
