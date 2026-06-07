@@ -169,26 +169,55 @@ When user says "review" or "周回顾":
 
 Trigger: 整理 gtd, 整理 todo, 整理待办, 清理 gtd, 清理 todo, 清理待办, cleanup gtd
 
-Executes 5 steps in order. Bulk operations do NOT need per-item confirmation — show summary, user confirms once.
+Executes 5 steps in order. **No confirmation needed — execute directly, output summary only.**
+
+**Output format:** Only show a summary table: how many items processed, what they are, and which section they landed in. Do NOT output step-by-step process.
 
 **Step 1: Normalize Index Box items**
 
+Index Box entries may use non-standard formatting. Handle flexibly:
+
 ```
 1. Read Index Box section
-2. Find bare-text entries (no domain/type markers)
-3. Infer domain ([L]/[W]) and type from keywords
-4. 🌟 Detection (per item, description line only, skip if negated: 不紧急/不重要/not urgent):
+2. Find ALL entries — recognize any list marker format:
+   - [ ], - , * , 1. , 2. , 3. , etc.
+3. Normalize list markers → - [ ]
+4. Extract time info embedded in description line:
+   - 明天/后天/今晚/明早/下周 → compute date, remove from description
+   - 6.8 / 6/8 / 6月8日 → parse to YYYY-MM-DD, remove from description
+   - ⚠️ Preserve time-of-day qualifiers: 今晚→📅 date 晚上, 明早→📅 date 早上
+     Qualifier keywords: 早上/上午/中午/下午/傍晚/晚上/夜里/凌晨
+   - If date cannot be determined (e.g., 过几天), leave in description
+   - Resulting description must be semantically correct
+5. Infer domain ([L]/[W]) and type from keywords
+6. 🌟 Detection (per item, description line only, skip if negated: 不紧急/不重要/not urgent):
    a. Scan for existing 🌟 (any position) → normalize to standard position. If already standard, skip.
    b. If no 🌟 from step a, scan keywords (紧急/重要/高优先/ASAP/urgent, case-insensitive) → auto-mark 🌟
    c. Flag auto-detected 🌟 in summary for user review
-5. Show proposed format (with 🌟 annotations) → user confirms
-6. edit_note to replace with standard GTD format
+7. Blockquote formatting:
+   a. Identify bare lines after item title (no list marker prefix)
+   b. Classify each line:
+      - Date formats (6月8日/6.8/📅 etc.) → 📅 YYYY-MM-DD[时段]
+      - Location (📍 prefix / keywords: 在/于/地点/位置/XX路/XX号/XXAPP) → 📍 location (auto-add 📍 if missing)
+      - Source (from @ / @某人) → from @source
+      - Everything else → content/context
+   c. Add >  prefix to each line
+   d. Reorder: content/context → 📅 YYYY-MM-DD → 📍 location → from @source
+   ⚠️ Date NEVER goes before content — verify every item before confirming.
+8. Show proposed format (with 🌟 annotations) → user confirms
+9. edit_note to replace with standard GTD format
 ```
 
 Format to apply:
 ```
 - [ ] `[L]` `📌 日常` 去物业中心拿租房合同
+  > 说明在前
+  > 📅 2026-06-08
 - [ ] 🌟 `[L]` `📌 日常` 紧急事项
+  > 说明在前
+  > 📅 2026-06-08 晚上
+  > 📍 地点
+  > from @来源
 ```
 
 **Step 2: Classify Index Box items**
