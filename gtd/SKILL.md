@@ -12,6 +12,9 @@ Never create new GTD notes. All task operations — add, move, complete, archive
 
 ```
 ## 📥 Index Box        ← Quick capture, process during weekly review
+## 📅 Today            ← Today's focus
+* #### **==🔵will comming:==** ← Due today (auto-moved from Next Actions during organize)
+* #### **==🔴out of date:==**  ← Overdue items (date < today, flagged for review)
 ## 📋 Next Actions     ← Committed: doing now or next
 ## 💡 Someday / Maybe  ← Want to do, not committed (review weekly)
 ## 📦 Archive          ← Links to yearly archives, newest first
@@ -235,7 +238,20 @@ Show summary with auto-classified items labeled, user confirms all at once.
 - **Next Actions** / **Someday / Maybe** — move per Move protocol (respecting 🌟 sort order)
 - **Delete** — remove from note entirely (not worth doing, don't keep)
 
-**Step 3: Delete strikethrough items**
+**Step 3: Process Today section**
+
+```
+1. If `* #### **==🔵will comming:==**` and `* #### **==🔴out of date:==**` markers don't exist under `## 📅 Today`, create them.
+2. Scan `## 📋 Next Actions` for items with `📅 YYYY-MM-DD` matching today's date.
+   - Move matching items to `## 📅 Today` > `* #### **==🔵will comming:==**`
+   - Cut from Next Actions, paste into will comming (maintaining L-before-W, 🌟 first, dated ascending)
+3. Scan `* #### **==🔵will comming:==**` items for `📅 YYYY-MM-DD` date < today's date.
+   - Move overdue items to `* #### **==🔴out of date:==**`
+   - Cut from will comming, paste into out of date (same sort rules)
+4. ⚠️ Items in `* #### **==🔴out of date:==**` stay there — user manually handles them (move back, archive, delete).
+```
+
+**Step 4: Delete strikethrough items**
 
 ```
 1. Search TODO note for ~~text~~ patterns
@@ -243,7 +259,7 @@ Show summary with auto-classified items labeled, user confirms all at once.
 3. No confirmation needed — strikethrough = explicit delete signal
 ```
 
-**Step 4: Move completed to Done**
+**Step 5: Move completed to Done**
 
 ```
 1. Search TODO note for all - [x] items
@@ -255,10 +271,10 @@ Show summary with auto-classified items labeled, user confirms all at once.
 
 Done section sort order: newest completed at top (reverse chronological).
 
-**Step 5: Auto-archive Done when full**
+**Step 6: Auto-archive Done when full**
 
 ```
-1. After Step 4, count items in ## ☑️ Done
+1. After Step 5, count items in ## ☑️ Done
 2. If ≥ 20:
    - Notify user: "Done has N items, archiving all to GTD ARCHIVE YYYY"
    - Move all Done items to current year's GTD ARCHIVE YYYY note
@@ -270,8 +286,10 @@ Done section sort order: newest completed at top (reverse chronological).
 
 ```
 条目去向:
+  ├─ Next Actions (📅==今天) → 📅 Today > Upcoming
+  ├─ Today > Upcoming (📅<今天) → 📅 Today > Out of Date
   ├─ 正常完成 (- [x]) → ☑️ Done (最前) → [≥20条触发] → 📦 Archive
-  └─ 废弃 (~~text~~)  → Delete (彻底移除，无确认)
+  └─ 废弃 (~~text~~) → Delete (彻底移除，无确认)
 ```
 
 ## Format Validation
