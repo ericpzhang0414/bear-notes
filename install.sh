@@ -463,11 +463,10 @@ RECALL_BLOCK='
 → **触发**: 学到新的用户事实/纠正/项目决策
 → **写操作**:
   1. `mcp__bear__search_notes` 搜索 #ai/memory 确认无重复
-  2. `mcp__bear__create_note` 创建笔记，标题格式 `「MEM」Category · Topic`
-  3. Tag: `#ai/memory/<type>/entry`（type: user/project/feedback/reference）
-  4. `mcp__bear__edit_note` 更新对应的 Index 笔记，追加 `[[wikilink]]`
+  2. 按 bear-memory skill 完整模板创建笔记（标题/标签/metadata/source traceability）
+  3. `mcp__bear__edit_note` 更新对应 Index 笔记追加 `[[wikilink]]`
 → **绝对禁止**: 使用系统 prompt 的 Write/Edit 工具写入 memory/ 目录
-→ 完整协议见 bear-memory skill
+→ 创建记忆前必须先加载 bear-memory skill，不得凭记忆构造格式
 '
 
 # Agent → global instruction file mapping (relative to $HOME)
