@@ -467,6 +467,7 @@ RECALL_BLOCK='
   3. `mcp__bear__edit_note` 更新对应 Index 笔记追加 `[[wikilink]]`
 → **绝对禁止**: 使用系统 prompt 的 Write/Edit 工具写入 memory/ 目录
 → 创建记忆前必须先加载 bear-memory skill，不得凭记忆构造格式
+<!-- Bear Memory section end -->
 '
 
 # Agent → global instruction file mapping (relative to $HOME)
@@ -493,32 +494,149 @@ if ! $CHECK_ONLY && ! $NO_RECALL; then
     [[ -z "$instr_file" ]] && continue
     target="$HOME/$instr_file"
 
-    # Check if recall block already present
-    if [[ -f "$target" ]] && grep -q "Bear Memory — 项目唯一记忆系统" "$target" 2>/dev/null; then
-      echo "  $name: already configured ($instr_file)"
-      auto_config_count=$((auto_config_count + 1))
-      continue
-    fi
-
-    # Create parent dir if needed
+    # Ensure parent dir exists
     mkdir -p "$(dirname "$target")"
 
-    # Append (or create) the instruction file
-    if [[ -f "$target" ]]; then
-      echo "$RECALL_BLOCK" >> "$target"
-      echo "  $name: appended to $instr_file"
-    else
-      # New file: add a header line
-      echo "# $name global instructions" > "$target"
-      echo "$RECALL_BLOCK" >> "$target"
-      echo "  $name: created $instr_file"
-    fi
+    # Compare content and update if install.sh version differs
+    _recall_tmp=$(mktemp)
+    echo "$RECALL_BLOCK" > "$_recall_tmp"
+    result=$(python3 - "$target" "$_recall_tmp" <<'PYEOF'
+import sys
+target = sys.argv[1]
+with open(sys.argv[2]) as f:
+    recall_block = f.read()
+
+start_heading = "## Bear Memory — 项目唯一记忆系统"
+end_marker = "<!-- Bear Memory section end -->"
+
+try:
+    with open(target) as f:
+        content = f.read()
+except FileNotFoundError:
+    content = ""
+
+recall_clean = recall_block.strip()
+
+if start_heading in content:
+    heading_pos = content.find(start_heading)
+
+    # Search backwards for "---" separator (within 500 chars)
+    search_start = max(0, heading_pos - 500)
+    prefix = content[search_start:heading_pos]
+    sep_pos = prefix.rfind('\n---\n')
+    if sep_pos != -1:
+        section_start = search_start + sep_pos + 1
+    else:
+        section_start = heading_pos
+
+    # Find end marker
+    if end_marker in content[section_start:]:
+        end_pos = content.find(end_marker, section_start)
+        line_end = content.find('\n', end_pos)
+        section_end = line_end + 1 if line_end != -1 else len(content)
+    else:
+        section_end = len(content)
+
+    existing = content[section_start:section_end].strip()
+
+    if existing == recall_clean:
+        print("OK")
+    else:
+        new_content = content[:section_start] + recall_block + content[section_end:]
+        with open(target, 'w') as f:
+            f.write(new_content)
+        print("UPD")
+else:
+    if content and not content.endswith('\n'):
+        content += '\n'
+    with open(target, 'w') as f:
+        f.write(content + recall_block)
+    print("NEW")
+PYEOF
+)
+    rm -f "$_recall_tmp"
+
+    case "$result" in
+      OK)  echo "  $name: up-to-date ($instr_file)" ;;
+      UPD) echo "  $name: updated ($instr_file)" ;;
+      NEW) echo "  $name: created ($instr_file)" ;;
+      *)   echo "  $name: error ($instr_file)" ;;
+    esac
     auto_config_count=$((auto_config_count + 1))
   done
 
   if [[ $auto_config_count -eq 0 ]]; then
     echo "  (no agents with global instruction support detected)"
   fi
+elif $CHECK_ONLY; then
+  echo ""
+  echo "--- Global instruction check ---"
+
+  for entry in "${AGENTS[@]}"; do
+    read -r name dtype dval sdir mcp fmt <<< "$entry"
+    agent_installed "$dtype" "$dval" || continue
+
+    instr_file="${AGENT_INSTRUCTION_FILES[$name]}"
+    [[ -z "$instr_file" ]] && continue
+    target="$HOME/$instr_file"
+
+    if [[ ! -f "$target" ]]; then
+      echo "  $name: no instruction file ($instr_file)"
+      continue
+    fi
+
+    _recall_tmp=$(mktemp)
+    echo "$RECALL_BLOCK" > "$_recall_tmp"
+    check_result=$(python3 - "$target" "$_recall_tmp" "check" <<'PYEOF'
+import sys
+target = sys.argv[1]
+with open(sys.argv[2]) as f:
+    recall_block = f.read()
+
+start_heading = "## Bear Memory — 项目唯一记忆系统"
+end_marker = "<!-- Bear Memory section end -->"
+
+with open(target) as f:
+    content = f.read()
+
+recall_clean = recall_block.strip()
+
+if start_heading in content:
+    heading_pos = content.find(start_heading)
+    search_start = max(0, heading_pos - 500)
+    prefix = content[search_start:heading_pos]
+    sep_pos = prefix.rfind('\n---\n')
+    if sep_pos != -1:
+        section_start = search_start + sep_pos + 1
+    else:
+        section_start = heading_pos
+
+    if end_marker in content[section_start:]:
+        end_pos = content.find(end_marker, section_start)
+        line_end = content.find('\n', end_pos)
+        section_end = line_end + 1 if line_end != -1 else len(content)
+    else:
+        section_end = len(content)
+
+    existing = content[section_start:section_end].strip()
+
+    if existing == recall_clean:
+        print("OK")
+    else:
+        print("UPD")
+else:
+    print("NEW")
+PYEOF
+)
+    rm -f "$_recall_tmp"
+
+    case "$check_result" in
+      OK)  echo "  $name: up-to-date ($instr_file)" ;;
+      UPD) echo "  $name: outdated ($instr_file)" ;;
+      NEW) echo "  $name: missing ($instr_file)" ;;
+      *)   echo "  $name: unknown ($instr_file)" ;;
+    esac
+  done
 fi
 
 # ── Phase Z: MCP permission auto-config ───────────────────────────
