@@ -12,8 +12,9 @@ Never create new GTD notes. All task operations — add, move, complete, archive
 
 ```
 ## 📥 Index Box        ← Quick capture, process during weekly review
-## 📅 Today            ← Today's focus
-* #### **==🔵will comming:==** ← Due today (auto-moved from Next Actions during organize)
+## 📅 Schedule         ← Date-bound items
+- [ ] today's items directly here
+* #### **==🔵will comming:==** ← Items due tomorrow
 * #### **==🔴out of date:==**  ← Overdue items (date < today, flagged for review)
 ## 📋 Next Actions     ← Committed: doing now or next
 ## 💡 Someday / Maybe  ← Want to do, not committed (review weekly)
@@ -229,7 +230,9 @@ Auto-classify first, then ask user for remaining items:
 
 ```
 For each item in Index Box:
-  ├─ Has future date (📅 YYYY-MM-DD) within ≤ 7 days of today → auto → Next Actions
+  ├─ Has date == today → auto → Schedule (directly under ## 📅 Schedule)
+  ├─ Has date == tomorrow → auto → Schedule > will comming
+  ├─ Has future date (📅 YYYY-MM-DD) within ≤ 7 days (not today/tomorrow) → auto → Next Actions
   ├─ Contains keywords (今天/明天/这周/尽快/紧急/ASAP) → auto → Next Actions
   └─ Otherwise → ask user: Next Actions? / Someday / Maybe? / Delete?
 ```
@@ -238,17 +241,22 @@ Show summary with auto-classified items labeled, user confirms all at once.
 - **Next Actions** / **Someday / Maybe** — move per Move protocol (respecting 🌟 sort order)
 - **Delete** — remove from note entirely (not worth doing, don't keep)
 
-**Step 3: Process Today section**
+**Step 3: Process Schedule section**
 
 ```
-1. If `* #### **==🔵will comming:==**` and `* #### **==🔴out of date:==**` markers don't exist under `## 📅 Today`, create them.
-2. Scan `## 📋 Next Actions` for items with `📅 YYYY-MM-DD` matching today's date.
-   - Move matching items to `## 📅 Today` > `* #### **==🔵will comming:==**`
-   - Cut from Next Actions, paste into will comming (maintaining L-before-W, 🌟 first, dated ascending)
-3. Scan `* #### **==🔵will comming:==**` items for `📅 YYYY-MM-DD` date < today's date.
-   - Move overdue items to `* #### **==🔴out of date:==**`
-   - Cut from will comming, paste into out of date (same sort rules)
-4. ⚠️ Items in `* #### **==🔴out of date:==**` stay there — user manually handles them (move back, archive, delete).
+1. Ensure Schedule section structure exists:
+   - Items directly under ## 📅 Schedule (for today's date)
+   - `* #### **==🔵will comming:==**` subsection (for tomorrow's date)
+   - `* #### **==🔴out of date:==**` subsection (for overdue items)
+   Create any missing markers.
+
+2. Scan ALL sections (Index Box, Next Actions, Someday/Maybe) for items with dates:
+   - 📅 == today → move to ## 📅 Schedule (directly, before will comming marker)
+   - 📅 == tomorrow → move to will comming subsection
+   - 📅 < today → move to out of date subsection
+   Maintain sort order (L before W, 🌟 first, dated ascending) in each location.
+
+3. ⚠️ Items in out of date stay there — user manually handles them (move back, archive, delete).
 ```
 
 **Step 4: Delete strikethrough items**
@@ -286,8 +294,9 @@ Done section sort order: newest completed at top (reverse chronological).
 
 ```
 条目去向:
-  ├─ Next Actions (📅==今天) → 📅 Today > Upcoming
-  ├─ Today > Upcoming (📅<今天) → 📅 Today > Out of Date
+  ├─ 📅==今天 → 📅 Schedule (直接)
+  ├─ 📅==明天 → 📅 Schedule > will comming
+  ├─ 📅<今天 → 📅 Schedule > out of date
   ├─ 正常完成 (- [x]) → ☑️ Done (最前) → [≥20条触发] → 📦 Archive
   └─ 废弃 (~~text~~) → Delete (彻底移除，无确认)
 ```
