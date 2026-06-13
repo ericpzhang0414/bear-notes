@@ -307,4 +307,17 @@ After any write, verify:
 - `[L]` items before `[W]` items within each section
 - Every item has `` `[L]` `` / `` `[W]` `` and a type marker
 - No `- [x]` items remain in TODO note — they must be archived
-- Blank lines between sections, not between items within a section
+
+### Blank line rules
+
+Core principle: **one** blank line between `##` sections; **no** blank lines within a section.
+
+| Boundary | Rule | Example |
+|----------|------|---------|
+| `##` header → first item | no blank | `## 📅 Schedule`\n`- [ ] ...` |
+| item → item | no blank | `- [ ] item1`\n`- [ ] item2` |
+| blockquote → next item | no blank | `  > 📅 2026-06-14`\n`- [ ] next item` |
+| blockquote → sub-marker (`* ####`) | no blank | `  > 📍 location`\n`* #### **==🔵will` |
+| sub-marker → sub-marker | no blank | `* #### **==🔵...`\n`* #### **==🔴...` |
+| sub-marker → first item | no blank | `* #### **==🔴out...`\n`- [ ] overdue item` |
+| last element (item/blockquote/sub-marker) → next `##` | **one** blank | `  > 📅 2026-06-10`\n\n`## 📋 Next Actions` |
