@@ -13,7 +13,7 @@ Never create new GTD notes. All task operations — add, move, complete, archive
 ```
 ## 📥 Index Box        ← Quick capture, process during weekly review
 ## 📅 Schedule         ← Date-bound items
-- [ ] today's items directly here
+* #### **==🟢today:==** ← Items due today
 * #### **==🔵will comming:==** ← Items due tomorrow
 * #### **==🔴out of date:==**  ← Overdue items (date < today, flagged for review)
 ## 📋 Next Actions     ← Committed: doing now or next
@@ -230,7 +230,7 @@ Auto-classify first, then ask user for remaining items:
 
 ```
 For each item in Index Box:
-  ├─ Has date == today → auto → Schedule (directly under ## 📅 Schedule)
+  ├─ Has date == today → auto → Schedule > today
   ├─ Has date == tomorrow → auto → Schedule > will comming
   ├─ Has future date (📅 YYYY-MM-DD) within ≤ 7 days (not today/tomorrow) → auto → Next Actions
   ├─ Contains keywords (今天/明天/这周/尽快/紧急/ASAP) → auto → Next Actions
@@ -245,13 +245,13 @@ Show summary with auto-classified items labeled, user confirms all at once.
 
 ```
 1. Ensure Schedule section structure exists:
-   - Items directly under ## 📅 Schedule (for today's date)
+   - `* #### **==🟢today:==**` subsection (for today's date)
    - `* #### **==🔵will comming:==**` subsection (for tomorrow's date)
    - `* #### **==🔴out of date:==**` subsection (for overdue items)
    Create any missing markers.
 
 2. Scan ALL sections (Index Box, Next Actions, Someday/Maybe) for items with dates:
-   - 📅 == today → move to ## 📅 Schedule (directly, before will comming marker)
+   - 📅 == today → move to today subsection
    - 📅 == tomorrow → move to will comming subsection
    - 📅 < today → move to out of date subsection
    Maintain sort order (L before W, 🌟 first, dated ascending) in each location.
@@ -294,7 +294,7 @@ Done section sort order: newest completed at top (reverse chronological).
 
 ```
 条目去向:
-  ├─ 📅==今天 → 📅 Schedule (直接)
+  ├─ 📅==今天 → 📅 Schedule > today
   ├─ 📅==明天 → 📅 Schedule > will comming
   ├─ 📅<今天 → 📅 Schedule > out of date
   ├─ 正常完成 (- [x]) → ☑️ Done (最前) → [≥20条触发] → 📦 Archive
@@ -314,10 +314,11 @@ Core principle: **one** blank line between `##` sections; **no** blank lines wit
 
 | Boundary | Rule | Example |
 |----------|------|---------|
-| `##` header → first item | no blank | `## 📅 Schedule`\n`- [ ] ...` |
+| `##` header → first item | no blank | `## 📋 Next Actions`\n`- [ ] ...` |
+| `##` header → sub-marker (`* ####`) | no blank | `## 📅 Schedule`\n`* #### **==🟢today` |
 | item → item | no blank | `- [ ] item1`\n`- [ ] item2` |
 | blockquote → next item | no blank | `  > 📅 2026-06-14`\n`- [ ] next item` |
 | blockquote → sub-marker (`* ####`) | no blank | `  > 📍 location`\n`* #### **==🔵will` |
-| sub-marker → sub-marker | no blank | `* #### **==🔵...`\n`* #### **==🔴...` |
+| sub-marker → sub-marker | no blank | `* #### **==🟢...`\n`* #### **==🔵...` |
 | sub-marker → first item | no blank | `* #### **==🔴out...`\n`- [ ] overdue item` |
 | last element (item/blockquote/sub-marker) → next `##` | **one** blank | `  > 📅 2026-06-10`\n\n`## 📋 Next Actions` |
