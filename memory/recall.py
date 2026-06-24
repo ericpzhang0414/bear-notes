@@ -5,7 +5,9 @@ Only injects #ai/memory/feedback/entry — behavioral corrections
 that the agent MUST know to avoid repeating past mistakes.
 
 Uses bearcli to read live Bear notes. Output is injected into the
-conversation context at session start. Keep it compact.
+conversation context at session start. Output is a compact command-style
+list: section titles only, no body text. Agent must search memory for
+full rule details when needed.
 """
 
 import json
@@ -33,10 +35,14 @@ def get_note_content(note_id):
     return bearcli("cat", note_id)
 
 
-def parse_section_summary(content):
-    """Extract ## section titles + first sentence of body text."""
-    summaries = []
-    # Split by ## sections, skip preamble (H1 title, tag, note-level comment)
+def parse_section_titles(content):
+    """Extract only ## section titles — no body text.
+
+    Returns compact key-phrases for command-style output. Hook output
+    only needs to remind the agent which rules exist; body text can be
+    loaded on demand via search_notes when context is needed.
+    """
+    titles = []
     parts = re.split(r'\n(?=## )', content)
     for part in parts:
         lines = part.strip().split('\n')
@@ -45,46 +51,41 @@ def parse_section_summary(content):
         title = lines[0].strip().lstrip('#').strip()
         if not title:
             continue
-        # Find first real body line (skip HTML comments and blank lines)
-        body = ""
-        for line in lines[1:]:
-            if line.startswith('<!--') or line.strip() == '':
-                continue
-            body = line.strip()
-            break
-        if body:
-            if len(body) > 150:
-                body = body[:150] + "..."
-            summaries.append(f"**{title}**: {body}")
-        else:
-            summaries.append(f"**{title}**")
-    return summaries
+        # Keep only the key phrase (< 20 chars when possible)
+        titles.append(title)
+    return titles
 
 
 def main():
-    # Use tag in query string — more reliable than --tag parameter
     notes = bearcli_json("search", "「MEM」 #ai/memory/feedback/entry")
 
     if not notes:
         return  # Silent — no feedback memories yet
 
-    all_summaries = []
+    all_titles = []
     for note in notes:
         nid = note.get("id", "")
         content = get_note_content(nid)
         if not content:
             continue
-        sections = parse_section_summary(content)
-        all_summaries.extend(sections)
+        titles = parse_section_titles(content)
+        all_titles.extend(titles)
 
-    if not all_summaries:
+    if not all_titles:
         return
 
-    print("## Bear Memory (auto-loaded)\n")
-    print("**Behavioral feedback:**")
-    for s in all_summaries:
-        print(f"- {s}")
-    print()
+    # Command-style single-line output: ⛔ RULE | RULE | RULE
+    rules = " | ".join(all_titles)
+    max_line = 5
+    if len(all_titles) > max_line:
+        # Split into multiple lines, max_line rules per line
+        lines = []
+        for i in range(0, len(all_titles), max_line):
+            chunk = all_titles[i:i+max_line]
+            lines.append(" | ".join(chunk))
+        rules = "\n   ".join(lines)
+
+    print(f"⛔ {rules}")
 
 
 if __name__ == "__main__":

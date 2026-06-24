@@ -254,131 +254,6 @@ search_notes(query: "「MEM」", tag: #ai/memory/user/entry) → all user topic 
 search_notes(query: "「MEM」", tag: #ai/memory/feedback/entry) → all feedback topic notes
 ```
 
-### Update Memory
-
-Note: Tag changes must follow the **Tag Operation Protocol** in bear-notes skill.
-
-**For multi-entry notes (has `##` sections):**
-```
-1. get_note(id, includeContent:true) → content + hash
-2. Identify which section to update (by section title or index)
-3. Build replacement section content (preserving ## header and metadata)
-4. edit_note to replace the section:
-   find:    "## <section title>\n<!-- metadata -->\n\n<body>\n\n> source"
-   replace: "## <section title>\n<!-- metadata -->\n\n<new body>\n\n> source"
-5. embed.py --update <id>  (re-indexes all sections)
-```
-
-**For single-section notes:**
-```
-1. get_note(id, includeContent:true) → content + hash
-2. Build updated full note content preserving the format
-3. edit_note or overwrite_note per Tag Operation Protocol (bear-notes skill)
-4. embed.py --update <id>
-```
-
-### Forget Memory
-
-```
-1. get_note(id, includeContent:true) → content
-2. Count ## sections in the note
-
-3. If note has > 1 section:
-   a. Use edit_note to find and remove the target section
-      find:    "## <section title>\n<!-- ... -->\n\n<body>\n\n> source"
-      replace: "" (empty, being careful with surrounding whitespace)
-   b. Optionally update note-level <!-- updated: <date> -->
-   c. embed.py --update <id>  (removes that section's embedding)
-   d. Index note wiki link stays (the topic still exists)
-
-4. If note has exactly 1 section (or is the last remaining):
-   a. trash_note(id) or archive_note(id)
-   b. Find the type's index note → edit_note to remove the wiki link line
-   c. embed.py --remove <id>
-```
-
-## Migration (Old Format → New Format)
-
-Old 1:1 format notes must be migrated to the topic-grouped format. Migration is **explicit** — triggered by user, not automatic.
-
-### Trigger & Prerequisites
-
-```
-Phase 1: Generate migration plan (read-only, safe)
-──────────────────────────────────────────────────
-$ python3 memory/embed.py --migrate-plan
-→ Outputs JSON plan to stdout with groups, ungrouped, and stats
-
-User reviews: grouping correctness, topic titles, avg_similarity scores
-User can adjust: groupings, topic titles, skip certain notes
-
-Phase 2: Agent executes the plan (user confirms → MCP writes)
-───────────────────────────────────────────────────────────────
-Agent reads the plan JSON → for each group:
-  1. create_note → new topic note (multi-section format)
-  2. archive_note → archive each old note (safe, not deleted)
-
-Phase 3: Rebuild index + update index notes
-───────────────────────────────────────────
-$ python3 memory/embed.py --rebuild
-Agent updates 4 index notes with new topic wiki links
-
-Old notes are archived, not trashed — recoverable if migration has issues.
-```
-
-### Grouping Algorithm
-
-Uses **deterministic greedy clustering + centroid comparison**:
-
-```
-1. Collect old-format notes (no ## sections), sorted by created ASC, note_id ASC
-2. Group by type (cluster only within same type)
-3. For each type, greedy centroid clustering (threshold 0.48):
-   - First note seeds cluster 1
-   - Each subsequent note: compare to each cluster's centroid
-   - If cos_sim ≥ 0.48 → add to best cluster, recompute centroid
-   - Else → create new cluster
-4. Multi-note clusters → topic notes; single-note clusters → also converted
-```
-
-Stability guaranteed by: fixed sort order, fixed threshold, centroid recompute on join.
-
-## Script Integration
-
-**embed.py** — maintains `~/.bear-memory-index/embeddings.jsonl`:
-```
-embed.py --rebuild              Full rebuild from Bear notes (per-section indexing)
-embed.py --update <note_id>     Re-index all sections of a note
-embed.py --remove <note_id>     Remove all entries for a note from index
-embed.py --stats                Show note count + section count + type distribution
-embed.py --migrate-plan         Generate migration plan (old → new format) as JSON
-```
-
-**search.py** — semantic search with hybrid ranking + topic grouping:
-```
-search.py "<query>"                    Top 5 results, all types
-search.py "<query>" --top 10           Top 10 results
-search.py "<query>" --type user        Filter by memory type
-search.py "<query>" --agent claude-code  Filter by source agent
-search.py "<query>" --raw              Show score breakdown (with section info)
-search.py --find-group "<text>"        Find best topic note for new memory
-           --type <type> [--threshold 0.48]
-```
-
-Ranking formula: `score = 0.6 × similarity + 0.3 × recency + 0.1 × confidence_boost`
-
-Results include `section_index` and `section_title` when available (new format).
-
-Scripts call `bearcli` CLI internally to read note content. They do NOT modify Bear notes — all writes go through MCP tools.
-
-## Index Maintenance
-
-- `~/.bear-memory-index/` is per-device, not synced
-- Run `embed.py --rebuild` on first use, after restoring from backup, or after migration
-- Run `embed.py --update <id>` after every memory create/update/forget
-- Each `##` section gets its own index entry with `section_index`, `section_title`
-- Index entries reference notes by `id` + `contentHash` — if a note is edited outside the memory workflow, re-index with `--update <id>`
-
 ## Cross-Skill Dependency
 
 This skill calls operations defined in the **bear-notes** skill:
@@ -388,3 +263,15 @@ This skill calls operations defined in the **bear-notes** skill:
 - MCP Availability Check (verify tools loaded before operating)
 
 If bear-notes skill is not loaded, all Bear operations must be prefixed with `mcp__bear__`.
+
+---
+
+## 参考文件
+
+以下内容按需通过 Read 加载：
+
+| 文件 | 内容 | 触发条件 |
+|------|------|---------|
+| `reference/memory-operations.md` | Update / Forget 记忆完整流程 | 更新或删除记忆 |
+| `reference/migration.md` | 旧格式迁移三阶段 | 用户触发迁移 |
+| `reference/scripts.md` | embed.py / search.py 参数、索引维护 | 运行脚本 / 重建索引 |
