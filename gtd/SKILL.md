@@ -13,9 +13,9 @@ Never create new GTD notes. All task operations — add, move, complete, archive
 ```
 ## 📥 Index Box        ← Quick capture, process during weekly review
 ## 📅 Schedule         ← Date-bound items
-* #### **==🟢today:==** ← Items due today
-* #### **==🔵will comming:==** ← Items due tomorrow
-* #### **==🔴out of date:==**  ← Overdue items (date < today, flagged for review)
+#### ==🟢> today==       ← Items due today
+#### ==🔵> will comming== ← Items due tomorrow
+#### ==🔴> out of date==  ← Overdue items (date < today, flagged for review)
 ## 📋 Next Actions     ← Committed: doing now or next
 ## 💡 Someday / Maybe  ← Want to do, not committed (review weekly)
 ## 📦 Archive          ← Links to yearly archives, newest first
@@ -251,9 +251,9 @@ Show summary with auto-classified items labeled, user confirms all at once.
 
 ```
 1. Ensure Schedule section structure exists:
-   - `* #### **==🟢today:==**` subsection (for today's date)
-   - `* #### **==🔵will comming:==**` subsection (for tomorrow's date)
-   - `* #### **==🔴out of date:==**` subsection (for overdue items)
+   - `#### ==🟢> today==` subsection (for today's date)
+   - `#### ==🔵> will comming==` subsection (for tomorrow's date)
+   - `#### ==🔴> out of date==` subsection (for overdue items)
    Create any missing markers.
 
 2. Scan ALL sections (Index Box, Next Actions, Someday/Maybe) for items with dates:
@@ -321,10 +321,10 @@ Core principle: **one** blank line between `##` sections; **no** blank lines wit
 | Boundary | Rule | Example |
 |----------|------|---------|
 | `##` header → first item | no blank | `## 📋 Next Actions`\n`- [ ] ...` |
-| `##` header → sub-marker (`* ####`) | no blank | `## 📅 Schedule`\n`* #### **==🟢today` |
+| `##` header → sub-marker (`####`) | no blank | `## 📅 Schedule`\n`#### ==🟢> today==` |
 | item → item | no blank | `- [ ] item1`\n`- [ ] item2` |
 | blockquote → next item | no blank | `  > 📅 2026-06-14`\n`- [ ] next item` |
-| blockquote → sub-marker (`* ####`) | no blank | `  > 📍 location`\n`* #### **==🔵will` |
-| sub-marker → sub-marker | no blank | `* #### **==🟢...`\n`* #### **==🔵...` |
-| sub-marker → first item | no blank | `* #### **==🔴out...`\n`- [ ] overdue item` |
+| blockquote → sub-marker (`####`) | no blank | `  > 📍 location`\n`#### ==🔵> will comming==` |
+| sub-marker → sub-marker | no blank | `#### ==🟢> today==`\n`#### ==🔵> will comming==` |
+| sub-marker → first item | no blank | `#### ==🔴> out of date==`\n`- [ ] overdue item` |
 | last element (item/blockquote/sub-marker) → next `##` | **one** blank | `  > 📅 2026-06-10`\n\n`## 📋 Next Actions` |
