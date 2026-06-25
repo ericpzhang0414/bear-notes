@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Recall feedback memories for Claude Code SessionStart hook.
+"""Recall memories and reference index for Claude Code SessionStart hook.
 
-Only injects #ai/memory/feedback/entry — behavioral corrections
-that the agent MUST know to avoid repeating past mistakes.
+Injects two things into session context:
+1. #ai/memory/feedback/entry — behavioral corrections
+2. 📚 Reference Index — topic map of external knowledge base
 
-Uses bearcli to read live Bear notes. Output is injected into the
-conversation context at session start. Output is a compact command-style
-list: section titles only, no body text. Agent must search memory for
-full rule details when needed.
+Uses bearcli to read live Bear notes. Output is compact (typically < 1KB).
+Agent must search memory/reference for full details when needed.
 """
 
 import json
@@ -35,13 +34,10 @@ def get_note_content(note_id):
     return bearcli("cat", note_id)
 
 
-def parse_section_titles(content):
-    """Extract only ## section titles — no body text.
+# ── Feedback Memory ──────────────────────────────────────────────
 
-    Returns compact key-phrases for command-style output. Hook output
-    only needs to remind the agent which rules exist; body text can be
-    loaded on demand via search_notes when context is needed.
-    """
+def parse_section_titles(content):
+    """Extract only ## section titles — no body text."""
     titles = []
     parts = re.split(r'\n(?=## )', content)
     for part in parts:
@@ -51,16 +47,16 @@ def parse_section_titles(content):
         title = lines[0].strip().lstrip('#').strip()
         if not title:
             continue
-        # Keep only the key phrase (< 20 chars when possible)
         titles.append(title)
     return titles
 
 
-def main():
+def recall_feedback():
+    """Load feedback memory rules."""
     notes = bearcli_json("search", "「MEM」 #ai/memory/feedback/entry")
 
     if not notes:
-        return  # Silent — no feedback memories yet
+        return None
 
     all_titles = []
     for note in notes:
@@ -72,20 +68,105 @@ def main():
         all_titles.extend(titles)
 
     if not all_titles:
-        return
+        return None
 
     # Command-style single-line output: ⛔ RULE | RULE | RULE
     rules = " | ".join(all_titles)
     max_line = 5
     if len(all_titles) > max_line:
-        # Split into multiple lines, max_line rules per line
         lines = []
         for i in range(0, len(all_titles), max_line):
             chunk = all_titles[i:i+max_line]
             lines.append(" | ".join(chunk))
         rules = "\n   ".join(lines)
 
-    print(f"⛔ {rules}")
+    return f"⛔ {rules}"
+
+
+# ── Reference Index ──────────────────────────────────────────────
+
+def parse_reference_sections(content):
+    """Extract ## section headings with counts from Reference Index.
+
+    Input: '## 文章 (9)\n→ [[note]]...'
+    Output: [('文章', 9, ['架构设计原则', 'Swift Concurrency']), ...]
+    """
+    sections = []
+    parts = re.split(r'\n(?=## )', content)
+    for part in parts:
+        lines = part.strip().split('\n')
+        if not lines or not lines[0].startswith('## '):
+            continue
+        heading = lines[0].strip().lstrip('#').strip()
+
+        # Extract name and count: "文章 (9)" or "视频 (0)"
+        m = re.match(r'(.+?)\s*\((\d+)\)', heading)
+        if not m:
+            continue
+        name = m.group(1).strip()
+        count = int(m.group(2))
+
+        # Extract note titles (from → [[Title]] or → [[target | Title]] lines)
+        titles = []
+        for line in lines[1:]:
+            # Match [[display]] or [[target|display]]
+            for m in re.finditer(r'\[\[(?:[^\]|]+\|)?([^\]|]+)\]\]', line):
+                titles.append(m.group(1).strip())
+
+        sections.append((name, count, titles))
+
+    return sections
+
+
+def recall_reference_index():
+    """Load 📚 Reference Index and format as compact topic map."""
+    notes = bearcli_json("search", "📚 Reference Index #reference")
+
+    if not notes:
+        return None
+
+    content = get_note_content(notes[0].get("id", ""))
+    if not content:
+        return None
+
+    sections = parse_reference_sections(content)
+    if not sections:
+        return None
+
+    # Build compact topic map
+    total = sum(c for _, c, _ in sections)
+    lines = [f"📚 #reference ({total}):"]
+
+    for name, count, titles in sections:
+        if count == 0:
+            continue  # skip empty categories
+        if count <= 5 or len(titles) <= 5:
+            # Few enough to list all
+            topic_str = ", ".join(titles[:5])
+        else:
+            # Many: show count + sample
+            sample = ", ".join(titles[:3])
+            topic_str = f"{sample}, …(+{count - 3})"
+        lines.append(f"  {name}({count}): {topic_str}")
+
+    return "\n".join(lines)
+
+
+# ── Main ─────────────────────────────────────────────────────────
+
+def main():
+    outputs = []
+
+    fb = recall_feedback()
+    if fb:
+        outputs.append(fb)
+
+    ref = recall_reference_index()
+    if ref:
+        outputs.append(ref)
+
+    if outputs:
+        print("\n".join(outputs))
 
 
 if __name__ == "__main__":

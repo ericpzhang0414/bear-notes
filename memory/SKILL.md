@@ -272,6 +272,6 @@ If bear-notes skill is not loaded, all Bear operations must be prefixed with `mc
 
 | 文件 | 内容 | 触发条件 |
 |------|------|---------|
-| `reference/memory-operations.md` | Update / Forget 记忆完整流程 | 更新或删除记忆 |
-| `reference/migration.md` | 旧格式迁移三阶段 | 用户触发迁移 |
-| `reference/scripts.md` | embed.py / search.py 参数、索引维护 | 运行脚本 / 重建索引 |
+| `docs/memory-operations.md` | Update / Forget 记忆完整流程 | 更新或删除记忆 |
+| `docs/migration.md` | 旧格式迁移三阶段 | 用户触发迁移 |
+| `docs/scripts.md` | embed.py / search.py 参数、索引维护 | 运行脚本 / 重建索引 |

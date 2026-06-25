@@ -34,7 +34,7 @@ When creating a note, analyze its content and assign it to the most specific exi
 
 **Example**: a note about home renovation does NOT go under `#log` — it goes under `#log/home`. A note about a work feature does NOT go under `#tme` — it goes under `#tme/feature/YYYY/MM`.
 
-Only create a new tag when no existing tag fits the content. For the full tag hierarchy, load `reference/tag-system.md`.
+Only create a new tag when no existing tag fits the content. For the full tag hierarchy, load `docs/tag-system.md`.
 
 ### Headings
 
@@ -127,7 +127,7 @@ Some text with a footnote[^1].
 1. Check your available tool list for `search_notes`, `create_note`, `get_note`.
 2. **If these tools are NOT present:**
    - Stop. Do not attempt any Bear operations.
-   - Tell the user: "Bear MCP is not configured for this agent. See `reference/mcp-tools.md` for setup instructions."
+   - Tell the user: "Bear MCP is not configured for this agent. See `docs/mcp-tools.md` for setup instructions."
 3. **If tools ARE present**, proceed with the operation below.
 
 ## Tag Operation Protocol
@@ -273,6 +273,6 @@ in parallel.
 
 | 文件 | 内容 | 触发条件 |
 |------|------|---------|
-| `reference/mcp-tools.md` | MCP 配置、25 工具速查表、已知问题 | 配置 MCP / 排查异常 |
-| `reference/tag-system.md` | 标签体系统计、官方 vs 用户对照、TagCon | 了解标签全貌 |
-| `reference/feature-template.md` | Feature 笔记状态追踪模板 | 创建 feature 笔记 |
+| `docs/mcp-tools.md` | MCP 配置、25 工具速查表、已知问题 | 配置 MCP / 排查异常 |
+| `docs/tag-system.md` | 标签体系统计、官方 vs 用户对照、TagCon | 了解标签全貌 |
+| `docs/feature-template.md` | Feature 笔记状态追踪模板 | 创建 feature 笔记 |

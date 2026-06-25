@@ -5,6 +5,7 @@ SCRIPT_DIR="${0:A:h}"
 SKILL_SRC="$SCRIPT_DIR/SKILL.md"
 MEMORY_SKILL_SRC="$SCRIPT_DIR/memory/SKILL.md"
 GTD_SKILL_SRC="$SCRIPT_DIR/gtd/SKILL.md"
+REF_SKILL_SRC="$SCRIPT_DIR/reference/SKILL.md"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -237,6 +238,11 @@ if $UNINSTALL; then
     if [[ -L "$gtd_target" ]]; then
       rm "$gtd_target"
       echo "  $name: removed bear-gtd"
+	    ref_target="$(dirname "$sdir")/reference/SKILL.md"
+	    if [[ -L "$ref_target" ]]; then
+	      rm "$ref_target"
+	      echo "  $name: removed reference"
+	    fi
     fi
   done
   echo "MCP configurations preserved. Remove manually if needed."
@@ -244,8 +250,8 @@ if $UNINSTALL; then
 fi
 
 # Print header
-printf "%-14s %-8s %-8s %-10s %-8s %-8s %s\n" "Agent" "Skill" "MCP" "bearcli" "Memory" "Gtd" "Notes"
-printf "%-14s %-8s %-8s %-10s %-8s %-8s %s\n" "------" "------" "------" "--------" "------" "------" "-----"
+printf "%-14s %-8s %-8s %-10s %-8s %-8s %-8s %s\n" "Agent" "Skill" "MCP" "bearcli" "Memory" "Gtd" "Ref" "Notes"
+printf "%-14s %-8s %-8s %-10s %-8s %-8s %-8s %s\n" "------" "------" "------" "--------" "------" "------" "------" "-----"
 
 installed=0 skipped=0 mcp_ok=0 mcp_new=0
 
@@ -372,7 +378,7 @@ for entry in "${AGENTS[@]}"; do
   printf " "
   c "${memory_status:--}"
   printf " "
-  c "${gtd_status:--}"
+  c "${gtd_status:--}"; printf " "; c "${ref_status:--}"
   printf " %s\n" "${skill_note:-}"
 
   installed=$((installed + 1))
