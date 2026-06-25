@@ -81,10 +81,12 @@ description: Collect and organize external knowledge in Bear. USE WHEN the user 
 
 | 来源 | 处理方式 | 约束 |
 |------|---------|------|
-| 网页 URL | `WebFetch` → 提取关键信息 | 付费墙/JS渲染失败→降级（粘贴/占位/放弃） |
+| 网页 URL | `WebFetch` → `Firecrawl MCP` → `curl` 三级自动降级 | 全失败→人工介入（粘贴/占位/放弃） |
 | PDF | `Read` → 提取文本 | Bear MCP 不支持附件上传，原始文件需手动拖入 |
 | 用户粘贴 | 直接使用 | 来源标注「手动粘贴」 |
 | 用户口述 | 直接整理 | 来源标注「个人想法」 |
+
+> 多级抓取策略详见 `docs/fetch-strategy.md`。
 
 ## 分类优先级
 
@@ -112,10 +114,16 @@ description: Collect and organize external knowledge in Bear. USE WHEN the user 
 触发词：收录/收藏/保存这篇文章/存一下/take a note/看到一篇好文章...
 
 ```
-1. 获取内容
-   - URL → WebFetch
+1. 获取内容（URL 三级自动降级）
+   - WebFetch
      → 成功：继续
-     → 失败：展示原因 + 降级选项（粘贴内容 / 空笔记占位 / 放弃）
+     → 失败（WebFetch 不可用或目标页面受限）：
+       - Firecrawl MCP (`firecrawl_scrape`)
+         → 可用且成功：继续
+         → 不可用或失败：
+           - `curl -sL <URL>` + 提取文本（脚本见 `docs/fetch-strategy.md`）
+             → 成功：继续
+             → 失败：展示各层原因 + 降级选项（粘贴内容 / 空笔记占位 / 放弃）
    - PDF → Read 读取文本
    - 用户粘贴 → 直接使用
    - 用户口述 → 直接整理
@@ -246,3 +254,4 @@ Layer 3: 用户显式 → "参考一下reference" / "之前收录过关于X的"
 | 文件 | 内容 | 触发条件 |
 |------|------|---------|
 | `docs/template.md` | 标准模板 + 简洁模板 + 字段说明 | 创建收录笔记时 |
+| `docs/fetch-strategy.md` | 多级抓取策略 + curl 提取脚本 + 故障排查 | WebFetch 失败时 |

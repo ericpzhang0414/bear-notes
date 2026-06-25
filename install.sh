@@ -368,6 +368,29 @@ for entry in "${AGENTS[@]}"; do
     gtd_status="-"
   fi
 
+  # Phase 4.7: Install reference skill
+  ref_target="$(dirname "$sdir")/reference/SKILL.md"
+  ref_status=""
+  if ! $CHECK_ONLY && [[ "$skill_status" != "SKIP" ]]; then
+    if [[ -L "$ref_target" ]] && [[ "$(readlink "$ref_target")" == "$REF_SKILL_SRC" ]]; then
+      ref_status="OK"
+    elif [[ -f "$REF_SKILL_SRC" ]]; then
+      mkdir -p "$(dirname "$ref_target")"
+      ln -sf "$REF_SKILL_SRC" "$ref_target"
+      ref_status="NEW"
+    fi
+  elif $CHECK_ONLY; then
+    if [[ -L "$ref_target" ]] && [[ "$(readlink "$ref_target")" == "$REF_SKILL_SRC" ]]; then
+      ref_status="OK"
+    elif [[ -f "$REF_SKILL_SRC" ]]; then
+      ref_status="FAIL"
+    else
+      ref_status="N/A"
+    fi
+  else
+    ref_status="-"
+  fi
+
   # Print row
   printf "%-14s " "$name"
   c "${skill_status:-FAIL}"
@@ -387,6 +410,74 @@ for entry in "${AGENTS[@]}"; do
     NEW|UPD) mcp_new=$((mcp_new + 1)) ;;
   esac
 done
+
+# ── Phase W: Firecrawl MCP auto-config ────────────────────────────
+firecrawl_status=""
+if ! $CHECK_ONLY; then
+  echo ""
+  echo "--- Firecrawl MCP ---"
+  if npx -y firecrawl-mcp --help &>/dev/null; then
+    echo "  firecrawl-mcp: available"
+    # Check if already configured in ~/.claude.json
+    if python3 -c "
+import json, sys
+try:
+    with open('$HOME/.claude.json') as f:
+        cfg = json.load(f)
+    servers = cfg.get('mcpServers', {})
+    if 'firecrawl' in servers:
+        sys.exit(0)
+    else:
+        sys.exit(1)
+except: sys.exit(1)
+" 2>/dev/null; then
+      echo "  MCP config: already in ~/.claude.json"
+      firecrawl_status="OK"
+    else
+      echo "  MCP config: adding to ~/.claude.json..."
+      python3 << 'PYEOF'
+import json, os
+home = os.path.expanduser("~")
+with open(f"{home}/.claude.json") as f:
+    cfg = json.load(f)
+cfg.setdefault("mcpServers", {})["firecrawl"] = {
+    "command": "npx",
+    "args": ["-y", "firecrawl-mcp"],
+}
+with open(f"{home}/.claude.json", "w") as f:
+    json.dump(cfg, f, indent=2, ensure_ascii=False)
+print("  MCP config: added firecrawl (restart session to activate)")
+PYEOF
+      firecrawl_status="NEW"
+    fi
+    # Check for API key
+    if [[ -z "${FIRECRAWL_API_KEY:-}" ]]; then
+      echo "  Note: No FIRECRAWL_API_KEY env var set."
+      echo "        firecrawl_scrape and firecrawl_search work for free (rate-limited)."
+      echo "        Get a key at https://firecrawl.dev for full access."
+    fi
+  else
+    echo "  firecrawl-mcp: not available (npx -y firecrawl-mcp failed)"
+    firecrawl_status="N/A"
+  fi
+elif $CHECK_ONLY; then
+  if npx -y firecrawl-mcp --help &>/dev/null; then
+    if python3 -c "
+import json
+with open('$HOME/.claude.json') as f:
+    cfg = json.load(f)
+assert 'firecrawl' in cfg.get('mcpServers', {})
+" 2>/dev/null; then
+      firecrawl_status="OK"
+    else
+      firecrawl_status="FAIL"
+    fi
+  else
+    firecrawl_status="N/A"
+  fi
+  printf "%-14s %-8s %-8s %-10s %-8s %-8s %-8s %s\n" \
+    "firecrawl" "-" "${firecrawl_status}" "-" "-" "-" "-" "MCP integration"
+fi
 
 # ── Phase X: Memory system ──────────────────────────────────────
 memory_pip="OK"
