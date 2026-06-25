@@ -22,7 +22,28 @@ description: Collect and organize external knowledge in Bear. USE WHEN the user 
 └── #reference/video                ← 视频/播客/演讲笔记
 ```
 
-**子标签可随时新增**。当内容不适合任何现有子标签时，创建新的子标签（一层，不做多级嵌套）。新子标签名使用小写英文单词。
+### 子标签管理规则
+
+**何时创建：** 某父标签下同主题笔记积累 ≥5 篇时，创建子标签。低于 5 篇不急着分。
+
+**命名：** 小写英文单词，多词用连字符（`claude-code`，非 `claude_code` 或 `ClaudeCode`）。
+
+**层级：** 仅一层子标签（`reference/guide/claude-code` ✓，`reference/guide/claude-code/v2` ✗）。
+
+**子标签哲学：** 不同类别按自身特点选择分组维度，不强求统一。
+
+| 类别 | 分组维度 | 已有子标签 |
+|------|---------|----------|
+| `article` | 按作者 | `article/mrpeak` |
+| `book` | 按书名 | `book/格局`、`book/自私的基因` 等 |
+| `tech` | 按技术领域 | `tech/ios`、`tech/ai`、`tech/flutter` 等 |
+| `guide` | 按工具/产品 | `guide/bear`、`guide/claude-code` |
+| `tool` | 按工具类型 | （待整理） |
+| `idea` | 通常不需要 | — |
+
+**何时不建子标签：** 单篇笔记、主题边界模糊、父标签下总量 <10 篇且主题分散。
+
+**新建子标签后：** 更新 📚 Reference Index 对应分组（按子标签拆分为子列表）。
 
 ## 笔记格式
 
