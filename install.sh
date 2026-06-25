@@ -7,6 +7,12 @@ MEMORY_SKILL_SRC="$SCRIPT_DIR/memory/SKILL.md"
 GTD_SKILL_SRC="$SCRIPT_DIR/gtd/SKILL.md"
 REF_SKILL_SRC="$SCRIPT_DIR/reference/SKILL.md"
 
+# ── OpenClaw 适配 ──────────────────────────────────────────────────
+ADAPT_SH="$SCRIPT_DIR/../.shared/adapt-openclaw.sh"
+if [[ -f "$ADAPT_SH" ]]; then
+  source "$ADAPT_SH"
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -50,6 +56,7 @@ AGENTS=(
   "gemini      cmd gemini $HOME/.gemini/skills/bear-notes $HOME/.gemini/settings.json"
   "copilot     cmd copilot $HOME/.copilot/skills/bear-notes $HOME/.copilot/mcp-config.json copilot"
   "codex       cmd codex $HOME/.codex/skills/bear-notes $HOME/.codex/config.toml toml"
+  "openclaw    cmd openclaw $HOME/.openclaw/skills/bear-notes $HOME/.openclaw/openclaw.json openclaw"
 )
 
 # ── Color helpers ────────────────────────────────────────────────
@@ -79,6 +86,15 @@ agent_installed() {
 # $1 = mcp file path, $2 = format ("" = standard JSON, "copilot", "toml")
 mcp_status() {
   case "${2:-}" in
+    openclaw)
+      if detect_openclaw && openclaw mcp list 2>/dev/null | grep -q '"bear"'; then
+        echo "OK"
+      elif detect_openclaw; then
+        echo "FAIL"
+      else
+        echo "NOCFG"
+      fi
+      ;;
     toml)
       # TOML: check [mcp_servers.bear] section exists with correct command
       if [[ -f "$1" ]]; then
@@ -123,6 +139,21 @@ except: print('NOCFG')
 
 mcp_configure() {
   case "${2:-}" in
+    openclaw)
+      if detect_openclaw; then
+        if register_bear_mcp_openclaw; then
+          if openclaw mcp list 2>/dev/null | grep -q '"bear"'; then
+            echo "OK"
+          else
+            echo "NEW"
+          fi
+        else
+          echo "FAIL"
+        fi
+      else
+        echo "NOCFG"
+      fi
+      ;;
     toml)
       if [[ -f "$1" ]]; then
         if grep -q '^\[mcp_servers\.bear\]$' "$1" 2>/dev/null && \
@@ -223,6 +254,15 @@ if $UNINSTALL; then
   echo "Removing bear-notes symlinks..."
   for entry in "${AGENTS[@]}"; do
     read -r name dtype dval sdir mcp fmt <<< "$entry"
+    if [[ "$name" == "openclaw" ]]; then
+      if detect_openclaw; then
+        uninstall_openclaw_skill "bear-notes"
+        uninstall_openclaw_skill "bear-memory"
+        uninstall_openclaw_skill "bear-gtd"
+        uninstall_openclaw_skill "reference"
+      fi
+      continue
+    fi
     agent_installed "$dtype" "$dval" || continue
     target="$sdir/SKILL.md"
     if [[ -L "$target" ]]; then
@@ -261,6 +301,29 @@ for entry in "${AGENTS[@]}"; do
   if ! agent_installed "$dtype" "$dval"; then
     printf "%-14s " "$name"; c SKIP; printf " %-8s %-10s %-8s %s\n" "-" "-" "-" "not installed"
     skipped=$((skipped + 1))
+    continue
+  fi
+
+  # ── OpenClaw 专用安装路径 ──────────────────────────────────────
+  if [[ "$name" == "openclaw" ]] && detect_openclaw; then
+    if ! $CHECK_ONLY; then
+      # 安装 4 个子技能
+      adapt_openclaw_skill "$SKILL_SRC"          "$HOME/.openclaw/skills/bear-notes"
+      adapt_openclaw_skill "$MEMORY_SKILL_SRC"   "$HOME/.openclaw/skills/bear-memory"
+      adapt_openclaw_skill "$GTD_SKILL_SRC"      "$HOME/.openclaw/skills/bear-gtd"
+      adapt_openclaw_skill "$REF_SKILL_SRC"      "$HOME/.openclaw/skills/reference"
+      # 链接 docs 目录
+      install_openclaw_docs "$SCRIPT_DIR/docs" "bear-notes"
+      # 注册 Bear MCP
+      register_bear_mcp_if_needed
+    fi
+    # 打印摘要行
+    printf "%-14s " "$name"
+    c OK; printf " "
+    c "$(mcp_status "" openclaw)"
+    printf " %-10s" "$bearcli_ok"
+    printf " %-8s %-8s %-8s %s\n" "OK" "OK" "OK" "4 sub-skills"
+    installed=$((installed + 1))
     continue
   fi
 
@@ -410,6 +473,9 @@ for entry in "${AGENTS[@]}"; do
     NEW|UPD) mcp_new=$((mcp_new + 1)) ;;
   esac
 done
+
+# ── OpenClaw: 如有新 MCP 注册则重启 Gateway ──────────────────────
+restart_gateway_if_mcp_changed
 
 # ── Phase W: Firecrawl MCP auto-config ────────────────────────────
 firecrawl_status=""
@@ -576,6 +642,7 @@ AGENT_INSTRUCTION_FILES=(
   ["gemini"]=".gemini/GEMINI.md"
   ["copilot"]=".copilot/instructions.md"
   ["codex"]=".codex/CODEX.md"
+  ["openclaw"]=".openclaw/workspace/AGENTS.md"
 )
 
 auto_config_count=0
