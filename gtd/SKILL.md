@@ -193,6 +193,12 @@ Index Box entries may use non-standard formatting. Handle flexibly:
      Qualifier keywords: 早上/上午/中午/下午/傍晚/晚上/夜里/凌晨
    - If date cannot be determined (e.g., 过几天), leave in description
    - Resulting description must be semantically correct
+   - ⚠️ Date disambiguation — extracted date may NOT be the task deadline:
+     - Test: Does the date describe when the ACTION happens vs. when the OBJECT/OUTCOME is?
+       - "6.28 开会" → action date ✓ (开会 happens on 6.28)
+       - "预定6.28住宿" → object date ✗ (住宿 on 6.28, 预定 should be now)
+     - Preparatory verbs (预定/预订/买/订/预约/抢/挂号) + future date → date is contextual, not action deadline
+     - If ambiguous → confirm with user: ask whether the date is the deadline or context
 5. Infer domain ([L]/[W]) and type from keywords
 6. 🌟 Detection (per item, description line only, skip if negated: 不紧急/不重要/not urgent):
    a. Scan for existing 🌟 (any position) → normalize to standard position. If already standard, skip.
