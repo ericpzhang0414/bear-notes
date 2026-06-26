@@ -5,7 +5,7 @@ SCRIPT_DIR="${0:A:h}"
 SKILL_SRC="$SCRIPT_DIR/SKILL.md"
 MEMORY_SKILL_SRC="$SCRIPT_DIR/memory/SKILL.md"
 GTD_SKILL_SRC="$SCRIPT_DIR/gtd/SKILL.md"
-REF_SKILL_SRC="$SCRIPT_DIR/reference/SKILL.md"
+REF_SKILL_SRC="$SCRIPT_DIR/bear-reference/SKILL.md"
 
 # ── OpenClaw 适配 ──────────────────────────────────────────────────
 ADAPT_SH="$SCRIPT_DIR/../.shared/adapt-openclaw.sh"
@@ -278,7 +278,7 @@ if $UNINSTALL; then
     if [[ -L "$gtd_target" ]]; then
       rm "$gtd_target"
       echo "  $name: removed bear-gtd"
-	    ref_target="$(dirname "$sdir")/reference/SKILL.md"
+	    ref_target="$(dirname "$sdir")/bear-reference/SKILL.md"
 	    if [[ -L "$ref_target" ]]; then
 	      rm "$ref_target"
 	      echo "  $name: removed reference"
@@ -431,8 +431,8 @@ for entry in "${AGENTS[@]}"; do
     gtd_status="-"
   fi
 
-  # Phase 4.7: Install reference skill
-  ref_target="$(dirname "$sdir")/reference/SKILL.md"
+  # Phase 4.7: Install bear-reference skill
+  ref_target="$(dirname "$sdir")/bear-reference/SKILL.md"
   ref_status=""
   if ! $CHECK_ONLY && [[ "$skill_status" != "SKIP" ]]; then
     if [[ -L "$ref_target" ]] && [[ "$(readlink "$ref_target")" == "$REF_SKILL_SRC" ]]; then

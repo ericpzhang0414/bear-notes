@@ -1,6 +1,6 @@
 ---
-name: reference
-description: Collect and organize external knowledge in Bear. USE WHEN the user mentions: 收录/收集/剪藏/收藏/capture/clip/save/保存这篇文章/保存这个网页/存一下/收起来/take a note/看到一篇好文章/发现一篇有意思/interesting article/思维模型/mental model/框架/framework/论文/paper/行业动态/业内趋势/news/trend/教程/tutorial/guide/最佳实践/best practice/工具推荐/tool推荐/归类/分类reference/重新分类/reclassify/找一篇文章/之前收录过/搜一下reference/查收录. Also triggers on references to the #reference tag or knowledge curation. Does NOT trigger on: GTD tasks (use bear-gtd), AI memory (use bear-memory), generic note creation (use bear-notes).
+name: bear-reference
+description: Collect and organize external knowledge in Bear. USE WHEN the user mentions: 收录/收集/剪藏/收藏/capture/clip/save/保存这篇文章/保存这个网页/存一下/收起来/take a note/看到一篇好文章/发现一篇有意思/interesting article/思维模型/mental model/框架/framework/论文/paper/行业动态/业内趋势/news/trend/教程/tutorial/guide/最佳实践/best practice/工具推荐/tool推荐/归类/分类reference/重新分类/reclassify/找一篇文章/之前收录过/搜一下reference/查收录. Also triggers on references to the #reference tag or knowledge curation. Does NOT trigger on: GTD tasks (use bear-gtd), AI memory (use bear-memory), generic note creation (use bear-notes). Skill name uses bear- prefix for consistency with other skills in the suite.
 ---
 
 # Bear Reference — 外部知识收录
