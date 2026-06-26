@@ -259,7 +259,7 @@ if $UNINSTALL; then
         uninstall_openclaw_skill "bear-notes"
         uninstall_openclaw_skill "bear-memory"
         uninstall_openclaw_skill "bear-gtd"
-        uninstall_openclaw_skill "reference"
+        uninstall_openclaw_skill "bear-reference"
       fi
       continue
     fi
@@ -311,7 +311,7 @@ for entry in "${AGENTS[@]}"; do
       adapt_openclaw_skill "$SKILL_SRC"          "$HOME/.openclaw/skills/bear-notes"
       adapt_openclaw_skill "$MEMORY_SKILL_SRC"   "$HOME/.openclaw/skills/bear-memory"
       adapt_openclaw_skill "$GTD_SKILL_SRC"      "$HOME/.openclaw/skills/bear-gtd"
-      adapt_openclaw_skill "$REF_SKILL_SRC"      "$HOME/.openclaw/skills/reference"
+      adapt_openclaw_skill "$REF_SKILL_SRC"      "$HOME/.openclaw/skills/bear-reference"
       # 链接 docs 目录
       install_openclaw_docs "$SCRIPT_DIR/docs" "bear-notes"
       # 注册 Bear MCP
@@ -431,7 +431,7 @@ for entry in "${AGENTS[@]}"; do
     gtd_status="-"
   fi
 
-  # Phase 4.7: Install reference skill
+  # Phase 4.7: Install bear-reference skill
   ref_target="$(dirname "$sdir")/bear-reference/SKILL.md"
   ref_status=""
   if ! $CHECK_ONLY && [[ "$skill_status" != "SKIP" ]]; then
