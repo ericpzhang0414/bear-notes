@@ -48,15 +48,15 @@ Runs 7 phases automatically:
 
 ```bash
 # Memory indexing & search
-python3 memory/embed.py --rebuild          # Rebuild embedding index
-python3 memory/embed.py --stats            # Show note count, section count, type distribution
-python3 memory/search.py "<query>"         # Semantic search (with section info)
-python3 memory/search.py --find-group "text" --type user  # Find best topic note to group with
+python3 skills/memory/embed.py --rebuild          # Rebuild embedding index
+python3 skills/memory/embed.py --stats            # Show note count, section count, type distribution
+python3 skills/memory/search.py "<query>"         # Semantic search (with section info)
+python3 skills/memory/search.py --find-group "text" --type user  # Find best topic note to group with
 
 # Migration (old 1:1 format → topic-grouped)
-python3 memory/embed.py --migrate-plan     # Phase 1: review grouping plan (read-only JSON)
+python3 skills/memory/embed.py --migrate-plan     # Phase 1: review grouping plan (read-only JSON)
 # → Agent executes via MCP                 # Phase 2: create topic notes, archive old ones
-python3 memory/embed.py --rebuild          # Phase 3: rebuild index
+python3 skills/memory/embed.py --rebuild          # Phase 3: rebuild index
 
 # Testing
 python3 test_memory.py                     # Run comprehensive test suite (37 tests)
@@ -68,14 +68,14 @@ The `memory/` subdirectory provides a proactive persistent memory layer so AI ag
 
 **Format:** Topic-grouped notes — one note per topic (`「MEM」User · 编码偏好`), each `##` section is one memory item. Sections ordered newest first (append with `position="beginning"`). Auto-grouping via max-section cosine similarity (threshold 0.48, calibrated for `paraphrase-multilingual-MiniLM-L12-v2`).
 
-**Proactive Protocol:** Agents recall memories silently at session start and write new memories without being asked. See `memory/SKILL.md` → Proactive Memory Protocol for the full specification.
+**Proactive Protocol:** Agents recall memories silently at session start and write new memories without being asked. See `skills/memory/SKILL.md` → Proactive Memory Protocol for the full specification.
 
 | Component | Purpose |
 |-----------|---------|
-| `memory/SKILL.md` | Memory sub-skill — format spec, classification, proactive protocol, CRUD operations |
-| `memory/embed.py` | Embedding builder — per-section indexing, `--migrate-plan` for clustering, `--stats` |
-| `memory/search.py` | Semantic search with hybrid ranking, `--find-group` for topic matching |
-| `memory/requirements.txt` | Python deps: `sentence-transformers>=5.0`, `numpy>=2.0` |
+| `skills/memory/SKILL.md` | Memory sub-skill — format spec, classification, proactive protocol, CRUD operations |
+| `skills/memory/embed.py` | Embedding builder — per-section indexing, `--migrate-plan` for clustering, `--stats` |
+| `skills/memory/search.py` | Semantic search with hybrid ranking, `--find-group` for topic matching |
+| `skills/memory/requirements.txt` | Python deps: `sentence-transformers>=5.0`, `numpy>=2.0` |
 | `test_memory.py` | Comprehensive test suite — 37 tests covering all components |
 
 **Memory types:** `user` (who you are, preferences), `feedback` (corrections, behavioral guidance), `project` (deadlines, constraints, decisions), `reference` (external resource pointers).
@@ -94,13 +94,19 @@ bear-notes/
 ├── README.md / README.zh-CN.md
 ├── install.sh            # Multi-agent installer (7 phases)
 ├── test_memory.py        # Test suite (37 tests)
-├── memory/
-│   ├── SKILL.md          # Memory sub-skill (proactive protocol + format + operations)
-│   ├── embed.py          # Embedding builder + index + migrate-plan
-│   ├── search.py         # Semantic search + find-group
-│   ├── recall.py         # SessionStart hook — inject feedback memories
-│   └── requirements.txt
-└── docs/                 # Design documents
+├── docs/                 # Design documents
+└── skills/
+    ├── reference/
+    │   ├── SKILL.md      # External knowledge curation sub-skill
+    │   └── docs/         # Reference templates & fetch strategy
+    ├── gtd/
+    │   └── SKILL.md      # GTD TODO list sub-skill
+    └── memory/
+        ├── SKILL.md      # Memory sub-skill (proactive protocol + format + operations)
+        ├── embed.py      # Embedding builder + index + migrate-plan
+        ├── search.py     # Semantic search + find-group
+        ├── recall.py     # SessionStart hook — inject feedback memories
+        └── requirements.txt
 ```
 
 ## Proactive Memory Recall
@@ -150,9 +156,9 @@ git pull                 # skill updates immediately via symlink
 ### Migration (Old 1:1 Format → Topic Grouped)
 
 ```bash
-python3 memory/embed.py --migrate-plan   # Phase 1: review grouping plan (read-only)
+python3 skills/memory/embed.py --migrate-plan   # Phase 1: review grouping plan (read-only)
 # → Agent executes plan via MCP         # Phase 2: create topic notes, archive old ones
-python3 memory/embed.py --rebuild        # Phase 3: rebuild index
+python3 skills/memory/embed.py --rebuild        # Phase 3: rebuild index
 ```
 
 ## Supported Agents
@@ -171,4 +177,4 @@ python3 memory/embed.py --rebuild        # Phase 3: rebuild index
 - Bear.app 2.8+ (bundles `bearcli`)
 - `bearcli` symlinked to `~/bin/bearcli` (or in PATH)
 - Agent must support MCP stdio servers
-- Python 3.10+ with `sentence-transformers` and `numpy` for memory system (`pip3 install -r memory/requirements.txt`)
+- Python 3.10+ with `sentence-transformers` and `numpy` for memory system (`pip3 install -r skills/memory/requirements.txt`)

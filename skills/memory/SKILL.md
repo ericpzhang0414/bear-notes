@@ -9,7 +9,7 @@ Persistent memory system for AI agents backed by Bear notes. Two-layer storage (
 
 **Prerequisites:**
 - bear-notes skill loaded (MCP operations + Tag Protocol)
-- `memory/requirements.txt` installed (`pip3 install -r requirements.txt`)
+- `skills/memory/requirements.txt` installed (`pip3 install -r requirements.txt`)
 - `embed.py --rebuild` run at least once
 
 ## Memory Note Format
@@ -138,7 +138,7 @@ search_notes(query: "「MEM」", tag: #ai/memory/project/entry) → load project
 
 **When unsure about how to behave:**
 ```
-python3 memory/search.py "<query about the situation>" --type feedback
+python3 skills/memory/search.py "<query about the situation>" --type feedback
 → Check if user has previously corrected similar behavior
 ```
 
@@ -179,7 +179,7 @@ Note: Tag changes in Bear must follow the **Tag Operation Protocol** in bear-not
 2. Build the memory body (1-3 sentences) + source line
 3. **REQUIRED — do NOT skip.** Run semantic grouping before any write:
    ```
-   python3 memory/search.py --find-group "<body text>" --type <type>
+   python3 skills/memory/search.py --find-group "<body text>" --type <type>
    ```
    → returns `{"note_id": "...", "similarity": N}` or `{}`
 
@@ -236,14 +236,14 @@ search_notes(query: "keyword", tag: #ai/memory) → get matching entries
 
 **Semantic search (for fuzzy queries, 20% of cases):**
 ```
-python3 memory/search.py "<query>" --top 5 --type <type>
+python3 skills/memory/search.py "<query>" --top 5 --type <type>
 → returns ranked note_ids + section_index + section_title with scores
 → get_note(id) for full note (all sections)
 ```
 
 **Find group for new memory:**
 ```
-python3 memory/search.py --find-group "<body>" --type <type>
+python3 skills/memory/search.py --find-group "<body>" --type <type>
 → returns {"note_id": "...", "similarity": N} or {}
 Use --threshold 0.45 to temporarily lower the threshold for edge cases
 ```

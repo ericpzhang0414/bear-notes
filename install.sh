@@ -3,9 +3,9 @@ set -uo pipefail
 
 SCRIPT_DIR="${0:A:h}"
 SKILL_SRC="$SCRIPT_DIR/SKILL.md"
-MEMORY_SKILL_SRC="$SCRIPT_DIR/memory/SKILL.md"
-GTD_SKILL_SRC="$SCRIPT_DIR/gtd/SKILL.md"
-REF_SKILL_SRC="$SCRIPT_DIR/bear-reference/SKILL.md"
+MEMORY_SKILL_SRC="$SCRIPT_DIR/skills/memory/SKILL.md"
+GTD_SKILL_SRC="$SCRIPT_DIR/skills/gtd/SKILL.md"
+REF_SKILL_SRC="$SCRIPT_DIR/skills/reference/SKILL.md"
 
 # ── OpenClaw 适配 ──────────────────────────────────────────────────
 ADAPT_SH="$SCRIPT_DIR/../.shared/adapt-openclaw.sh"
@@ -278,11 +278,11 @@ if $UNINSTALL; then
     if [[ -L "$gtd_target" ]]; then
       rm "$gtd_target"
       echo "  $name: removed bear-gtd"
-	    ref_target="$(dirname "$sdir")/bear-reference/SKILL.md"
-	    if [[ -L "$ref_target" ]]; then
-	      rm "$ref_target"
-	      echo "  $name: removed reference"
-	    fi
+    fi
+    ref_target="$(dirname "$sdir")/bear-reference/SKILL.md"
+    if [[ -L "$ref_target" ]]; then
+      rm "$ref_target"
+      echo "  $name: removed reference"
     fi
   done
   echo "MCP configurations preserved. Remove manually if needed."
@@ -431,7 +431,7 @@ for entry in "${AGENTS[@]}"; do
     gtd_status="-"
   fi
 
-  # Phase 4.7: Install bear-reference skill
+  # Phase 4.7: Install reference skill
   ref_target="$(dirname "$sdir")/bear-reference/SKILL.md"
   ref_status=""
   if ! $CHECK_ONLY && [[ "$skill_status" != "SKIP" ]]; then
@@ -578,7 +578,7 @@ if ! $CHECK_ONLY && ! $NO_MEMORY; then
   echo "--- Memory system ---"
 
   # pip install
-  req_file="$SCRIPT_DIR/memory/requirements.txt"
+  req_file="$SCRIPT_DIR/skills/memory/requirements.txt"
   if [[ -f "$req_file" ]]; then
     if python3 -c "import sentence_transformers" &>/dev/null; then
       echo "  pip deps: already installed"
@@ -606,7 +606,7 @@ if ! $CHECK_ONLY && ! $NO_MEMORY; then
   fi
 
   # embed rebuild
-  embed_script="$SCRIPT_DIR/memory/embed.py"
+  embed_script="$SCRIPT_DIR/skills/memory/embed.py"
   if [[ -f "$embed_script" ]]; then
     echo "  embed rebuild: running..."
     if python3 "$embed_script" --rebuild 2>&1; then
@@ -915,7 +915,7 @@ if ! $CHECK_ONLY && ! $NO_HOOK; then
   echo "--- SessionStart hook ---"
 
   cc_settings="$HOME/.claude/settings.json"
-  recall_script="$SCRIPT_DIR/memory/recall.py"
+  recall_script="$SCRIPT_DIR/skills/memory/recall.py"
 
   python3 - "$cc_settings" "$recall_script" <<'PYEOF'
 import json, sys
@@ -955,7 +955,7 @@ PYEOF
   hook_configured=$?
 elif $CHECK_ONLY; then
   cc_settings="$HOME/.claude/settings.json"
-  recall_script="$SCRIPT_DIR/memory/recall.py"
+  recall_script="$SCRIPT_DIR/skills/memory/recall.py"
   if python3 -c "
 import json
 try:

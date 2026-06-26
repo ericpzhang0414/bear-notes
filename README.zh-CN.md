@@ -48,15 +48,15 @@ cd bear-notes
 
 ```bash
 # 记忆索引与搜索
-python3 memory/embed.py --rebuild          # 重建嵌入索引
-python3 memory/embed.py --stats            # 显示笔记数、section 数、类型分布
-python3 memory/search.py "<查询>"          # 语义搜索（含 section 信息）
-python3 memory/search.py --find-group "文本" --type user  # 查找最佳 topic 笔记
+python3 skills/memory/embed.py --rebuild          # 重建嵌入索引
+python3 skills/memory/embed.py --stats            # 显示笔记数、section 数、类型分布
+python3 skills/memory/search.py "<查询>"          # 语义搜索（含 section 信息）
+python3 skills/memory/search.py --find-group "文本" --type user  # 查找最佳 topic 笔记
 
 # 迁移（旧 1:1 格式 → topic 分组）
-python3 memory/embed.py --migrate-plan     # 阶段 1：预览分组方案（只读 JSON）
+python3 skills/memory/embed.py --migrate-plan     # 阶段 1：预览分组方案（只读 JSON）
 # → Agent 通过 MCP 执行                    # 阶段 2：创建 topic 笔记，归档旧笔记
-python3 memory/embed.py --rebuild          # 阶段 3：重建索引
+python3 skills/memory/embed.py --rebuild          # 阶段 3：重建索引
 
 # 测试
 python3 test_memory.py                     # 运行完整测试套件（37 个测试）
@@ -68,14 +68,14 @@ python3 test_memory.py                     # 运行完整测试套件（37 个�
 
 **格式：** 主题分组笔记 — 每个主题一张笔记（如 `「MEM」User · 编码偏好`），每个 `##` section 是一条记忆条目。最新条目排在最前（追加用 `position="beginning"`）。通过 max-section 余弦相似度自动分组（阈值 0.48，基于 `paraphrase-multilingual-MiniLM-L12-v2` 校准）。
 
-**主动协议：** 代理在会话开始时静默召回记忆，无需被要求即可写入新记忆。详见 `memory/SKILL.md` → Proactive Memory Protocol。
+**主动协议：** 代理在会话开始时静默召回记忆，无需被要求即可写入新记忆。详见 `skills/memory/SKILL.md` → Proactive Memory Protocol。
 
 | 组件 | 用途 |
 |------|------|
-| `memory/SKILL.md` | 记忆子技能 — 格式规范、分类规则、主动协议、CRUD 操作 |
-| `memory/embed.py` | 嵌入构建器 — 每个 section 独立索引，`--migrate-plan` 聚类迁移，`--stats` |
-| `memory/search.py` | 语义搜索 + 混合排序，`--find-group` topic 匹配 |
-| `memory/requirements.txt` | Python 依赖：`sentence-transformers>=5.0`、`numpy>=2.0` |
+| `skills/memory/SKILL.md` | 记忆子技能 — 格式规范、分类规则、主动协议、CRUD 操作 |
+| `skills/memory/embed.py` | 嵌入构建器 — 每个 section 独立索引，`--migrate-plan` 聚类迁移，`--stats` |
+| `skills/memory/search.py` | 语义搜索 + 混合排序，`--find-group` topic 匹配 |
+| `skills/memory/requirements.txt` | Python 依赖：`sentence-transformers>=5.0`、`numpy>=2.0` |
 | `test_memory.py` | 完整测试套件 — 37 个测试覆盖所有组件 |
 
 **记忆类型：** `user`（用户身份与偏好）、`feedback`（纠正与行为指引）、`project`（截止时间、约束、决策）、`reference`（外部资源指针）。
@@ -94,12 +94,19 @@ bear-notes/
 ├── README.md / README.zh-CN.md
 ├── install.sh            # 多代理安装器（7 阶段）
 ├── test_memory.py        # 测试套件（37 个测试）
-├── memory/
-│   ├── SKILL.md          # 记忆子技能（主动协议 + 格式 + 操作）
-│   ├── embed.py          # 嵌入构建器 + 索引 + migrate-plan
-│   ├── search.py         # 语义搜索 + find-group
-│   └── requirements.txt
-└── docs/                 # 设计文档
+├── docs/                 # 设计文档
+└── skills/
+    ├── reference/
+    │   ├── SKILL.md      # 外部知识收录子技能
+    │   └── docs/         # 参考模板与抓取策略
+    ├── gtd/
+    │   └── SKILL.md      # GTD 待办清单子技能
+    └── memory/
+        ├── SKILL.md      # 记忆子技能（主动协议 + 格式 + 操作）
+        ├── embed.py      # 嵌入构建器 + 索引 + migrate-plan
+        ├── search.py     # 语义搜索 + find-group
+        ├── recall.py     # SessionStart 钩子 — 注入反馈记忆
+        └── requirements.txt
 ```
 
 ## 主动记忆召回
@@ -149,9 +156,9 @@ git pull                 # 技能通过软链接立即生效
 ### 迁移（旧 1:1 格式 → Topic 分组）
 
 ```bash
-python3 memory/embed.py --migrate-plan   # 阶段 1：预览分组方案（只读）
+python3 skills/memory/embed.py --migrate-plan   # 阶段 1：预览分组方案（只读）
 # → Agent 通过 MCP 执行                   # 阶段 2：创建 topic 笔记，归档旧笔记
-python3 memory/embed.py --rebuild        # 阶段 3：重建索引
+python3 skills/memory/embed.py --rebuild        # 阶段 3：重建索引
 ```
 
 ## 支持的代理
@@ -170,4 +177,4 @@ python3 memory/embed.py --rebuild        # 阶段 3：重建索引
 - Bear.app 2.8+（内置 `bearcli`）
 - `bearcli` 软链接到 `~/bin/bearcli`（或在 PATH 中）
 - 代理需支持 MCP stdio 服务
-- Python 3.10+，记忆系统需要 `sentence-transformers` 和 `numpy`（`pip3 install -r memory/requirements.txt`）
+- Python 3.10+，记忆系统需要 `sentence-transformers` 和 `numpy`（`pip3 install -r skills/memory/requirements.txt`）

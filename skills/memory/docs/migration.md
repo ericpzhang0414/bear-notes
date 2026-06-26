@@ -7,7 +7,7 @@ Old 1:1 format notes must be migrated to the topic-grouped format. Migration is 
 ```
 Phase 1: Generate migration plan (read-only, safe)
 ──────────────────────────────────────────────────
-$ python3 memory/embed.py --migrate-plan
+$ python3 skills/memory/embed.py --migrate-plan
 → Outputs JSON plan to stdout with groups, ungrouped, and stats
 
 User reviews: grouping correctness, topic titles, avg_similarity scores
@@ -21,7 +21,7 @@ Agent reads the plan JSON → for each group:
 
 Phase 3: Rebuild index + update index notes
 ───────────────────────────────────────────
-$ python3 memory/embed.py --rebuild
+$ python3 skills/memory/embed.py --rebuild
 Agent updates 4 index notes with new topic wiki links
 
 Old notes are archived, not trashed — recoverable if migration has issues.

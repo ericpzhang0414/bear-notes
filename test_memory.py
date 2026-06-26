@@ -16,8 +16,8 @@ from unittest.mock import patch, MagicMock
 
 import numpy as np
 
-# Add memory/ to path
-sys.path.insert(0, str(Path(__file__).parent / "memory"))
+# Add skills/memory/ to path
+sys.path.insert(0, str(Path(__file__).parent / "skills" / "memory"))
 
 # ── Mock setup (before importing modules under test) ──
 # We patch at the module level so embed.py and search.py don't try to
@@ -813,7 +813,7 @@ class TestCLIParsing(unittest.TestCase):
         """embed.py with no args should print help."""
         import subprocess
         result = subprocess.run(
-            [sys.executable, "memory/embed.py"],
+            [sys.executable, "skills/memory/embed.py"],
             capture_output=True, text=True
         )
         self.assertIn("Usage:", result.stdout)
@@ -824,7 +824,7 @@ class TestCLIParsing(unittest.TestCase):
         """embed.py --stats should succeed (even with empty index)."""
         import subprocess
         result = subprocess.run(
-            [sys.executable, "memory/embed.py", "--stats"],
+            [sys.executable, "skills/memory/embed.py", "--stats"],
             capture_output=True, text=True
         )
         # Should either succeed or print "empty" message
@@ -834,7 +834,7 @@ class TestCLIParsing(unittest.TestCase):
         """search.py with no args should print help."""
         import subprocess
         result = subprocess.run(
-            [sys.executable, "memory/search.py"],
+            [sys.executable, "skills/memory/search.py"],
             capture_output=True, text=True
         )
         self.assertIn("Usage:", result.stdout)
