@@ -45,10 +45,12 @@ def get_model():
 
 # ── bearcli helpers ────────────────────────────────────────────────
 
+_BEARCLI = os.environ.get("BEARCLI_CMD", "bearcli")
+
 def bearcli(*args):
     """Run bearcli and return stdout."""
     result = subprocess.run(
-        ["bearcli"] + list(args),
+        [_BEARCLI] + list(args),
         capture_output=True, text=True
     )
     if result.returncode != 0:

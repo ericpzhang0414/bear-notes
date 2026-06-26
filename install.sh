@@ -89,7 +89,7 @@ mcp_status() {
     openclaw)
       if detect_openclaw && openclaw mcp list 2>/dev/null | grep -q '"bear"'; then
         echo "OK"
-      elif detect_openclaw; then
+      elif declare -f detect_openclaw &>/dev/null && detect_openclaw; then
         echo "FAIL"
       else
         echo "NOCFG"
@@ -140,7 +140,7 @@ except: print('NOCFG')
 mcp_configure() {
   case "${2:-}" in
     openclaw)
-      if detect_openclaw; then
+      if declare -f detect_openclaw &>/dev/null && detect_openclaw; then
         if register_bear_mcp_openclaw; then
           if openclaw mcp list 2>/dev/null | grep -q '"bear"'; then
             echo "OK"
@@ -255,7 +255,7 @@ if $UNINSTALL; then
   for entry in "${AGENTS[@]}"; do
     read -r name dtype dval sdir mcp fmt <<< "$entry"
     if [[ "$name" == "openclaw" ]]; then
-      if detect_openclaw; then
+      if declare -f detect_openclaw &>/dev/null && detect_openclaw; then
         uninstall_openclaw_skill "bear-notes"
         uninstall_openclaw_skill "bear-memory"
         uninstall_openclaw_skill "bear-gtd"
@@ -475,7 +475,9 @@ for entry in "${AGENTS[@]}"; do
 done
 
 # ── OpenClaw: 如有新 MCP 注册则重启 Gateway ──────────────────────
-restart_gateway_if_mcp_changed
+if declare -f restart_gateway_if_mcp_changed &>/dev/null; then
+  restart_gateway_if_mcp_changed
+fi
 
 # ── Phase W: Firecrawl MCP auto-config ────────────────────────────
 firecrawl_status=""
@@ -516,11 +518,32 @@ print("  MCP config: added firecrawl (restart session to activate)")
 PYEOF
       firecrawl_status="NEW"
     fi
-    # Check for API key
-    if [[ -z "${FIRECRAWL_API_KEY:-}" ]]; then
-      echo "  Note: No FIRECRAWL_API_KEY env var set."
-      echo "        firecrawl_scrape and firecrawl_search work for free (rate-limited)."
-      echo "        Get a key at https://firecrawl.dev for full access."
+    # Check for API key — try env first, then ~/.zshrc, then prompt
+    if [[ -n "${FIRECRAWL_API_KEY:-}" ]]; then
+      echo "  API key: configured (from environment)"
+    else
+      # Check if already saved in ~/.zshrc
+      _saved_key=$(grep -o 'FIRECRAWL_API_KEY="[^"]*"' "$HOME/.zshrc" 2>/dev/null | head -1)
+      if [[ -n "$_saved_key" ]]; then
+        # Extract just the value (strip FIRECRAWL_API_KEY=" and trailing ")
+        _key_val="${_saved_key#FIRECRAWL_API_KEY=\"}"
+        _key_val="${_key_val%\"}"
+        export FIRECRAWL_API_KEY="$_key_val"
+        echo "  API key: found in ~/.zshrc, exported for this session"
+      else
+        echo "  Firecrawl API key not configured."
+        echo "  Without a key: free tier (rate-limited). With a key: full access."
+        echo "  Get a key at https://firecrawl.dev"
+        echo -n "  Enter your API key (or press Enter to skip): "
+        read -r _user_key
+        if [[ -n "$_user_key" ]]; then
+          echo "export FIRECRAWL_API_KEY=\"$_user_key\"" >> "$HOME/.zshrc"
+          export FIRECRAWL_API_KEY="$_user_key"
+          echo "  API key: saved to ~/.zshrc + exported for this session"
+        else
+          echo "  API key: skipped (free tier only)"
+        fi
+      fi
     fi
   else
     echo "  firecrawl-mcp: not available (npx -y firecrawl-mcp failed)"
