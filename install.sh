@@ -686,7 +686,11 @@ if ! $CHECK_ONLY && ! $NO_RECALL; then
 
     # Compare content and update if install.sh version differs
     _recall_tmp=$(mktemp)
-    echo "$RECALL_BLOCK" > "$_recall_tmp"
+    if [[ "$name" == "openclaw" ]]; then
+      echo "$RECALL_BLOCK" | sed 's/mcp__bear__/bear__/g' > "$_recall_tmp"
+    else
+      echo "$RECALL_BLOCK" > "$_recall_tmp"
+    fi
     result=$(python3 - "$target" "$_recall_tmp" <<'PYEOF'
 import sys
 target = sys.argv[1]
@@ -773,7 +777,11 @@ elif $CHECK_ONLY; then
     fi
 
     _recall_tmp=$(mktemp)
-    echo "$RECALL_BLOCK" > "$_recall_tmp"
+    if [[ "$name" == "openclaw" ]]; then
+      echo "$RECALL_BLOCK" | sed 's/mcp__bear__/bear__/g' > "$_recall_tmp"
+    else
+      echo "$RECALL_BLOCK" > "$_recall_tmp"
+    fi
     check_result=$(python3 - "$target" "$_recall_tmp" "check" <<'PYEOF'
 import sys
 target = sys.argv[1]
