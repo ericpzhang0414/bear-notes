@@ -241,6 +241,8 @@ get_note(id, includeContent:false)
 | Duplicates today | `search_notes(query: "@today")` → inspect titles |
 | Tag counts | `search_notes(query: "#tag")` → array length |
 
+> ⚠️ 发现 `@untagged` 或同日大量创建笔记时，参考 `docs/conflict-resolution.md` 判断是否为冲突。
+
 ## Note Format Validation
 
 **Every create_note MUST be followed by this check immediately — no exceptions.**
@@ -275,4 +277,5 @@ in parallel.
 |------|------|---------|
 | `docs/mcp-tools.md` | MCP 配置、25 工具速查表、已知问题 | 配置 MCP / 排查异常 |
 | `docs/tag-system.md` | 标签体系统计、官方 vs 用户对照、TagCon | 了解标签全貌 |
+| `docs/conflict-resolution.md` | 冲突识别与处理（三种类型） | 笔记冲突 / conflict badge / 笔记异常 |
 | `docs/feature-template.md` | Feature 笔记状态追踪模板 | 创建 feature 笔记 |
