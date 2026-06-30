@@ -35,12 +35,14 @@ for arg in "$@"; do
     --no-recall) NO_RECALL=true ;;
     --no-hook) NO_HOOK=true ;;
     --help|-h)
-      echo "Usage: ./install.sh [--check] [--uninstall] [--force] [--no-memory]"
+      echo "Usage: ./install.sh [--check] [--uninstall] [--force] [--no-memory] [--no-recall] [--no-hook]"
       echo "  (no args)  Auto-detect agents, install skill + MCP + memory"
       echo "  --check    Verify only, no changes"
       echo "  --uninstall  Remove all symlinks"
       echo "  --force    Skip confirmation on old version replacement"
       echo "  --no-memory  Skip memory dependencies (pip install + embed rebuild)"
+      echo "  --no-recall  Skip global instruction auto-config (Phase Y)"
+      echo "  --no-hook    Skip SessionStart hook config (Phase Z2)"
       exit 0 ;;
     *) echo "Unknown: $arg"; exit 1 ;;
   esac
@@ -497,7 +499,7 @@ try:
         sys.exit(0)
     else:
         sys.exit(1)
-except: sys.exit(1)
+except Exception: sys.exit(1)
 " 2>/dev/null; then
       echo "  MCP config: already in ~/.claude.json"
       firecrawl_status="OK"
@@ -831,6 +833,7 @@ PYEOF
       NEW) echo "  $name: missing ($instr_file)" ;;
       *)   echo "  $name: unknown ($instr_file)" ;;
     esac
+    auto_config_count=$((auto_config_count + 1))
   done
 fi
 
@@ -879,10 +882,10 @@ for item in cfg.get('permissions',{}).get('allow',[]):
     existing=""
   fi
 
-  added=0 skipped=0
+  added=0 mcp_skipped=0
   for entry in "${BEAR_MCP_ALLOWLIST[@]}"; do
     if echo "$existing" | grep -qF "$entry" 2>/dev/null; then
-      skipped=$((skipped + 1))
+      mcp_skipped=$((mcp_skipped + 1))
     else
       # Append to allow array
       python3 -c "
@@ -897,7 +900,7 @@ with open('$SETTINGS_FILE','w') as f:
     fi
   done
 
-  echo "  Bear MCP: $added added, $skipped already configured"
+  echo "  Bear MCP: $added added, $mcp_skipped already configured"
 else
   echo ""
   echo "--- MCP permission check (read-only) ---"
@@ -965,13 +968,13 @@ elif $CHECK_ONLY; then
   cc_settings="$HOME/.claude/settings.json"
   recall_script="$SCRIPT_DIR/skills/memory/recall.py"
   if python3 -c "
-import json
+import json, sys
 try:
     with open('$cc_settings') as f: cfg = json.load(f)
     for h in cfg.get('hooks',{}).get('SessionStart',[]):
-        if 'recall.py' in json.dumps(h): exit(0)
-    exit(1)
-except: exit(1)
+        if 'recall.py' in json.dumps(h): sys.exit(0)
+    sys.exit(1)
+except Exception: sys.exit(1)
 " 2>/dev/null; then
     echo "  Claude Code: SessionStart hook already configured"
   else
