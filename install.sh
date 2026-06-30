@@ -284,7 +284,7 @@ if $UNINSTALL; then
     ref_target="$(dirname "$sdir")/bear-reference/SKILL.md"
     if [[ -L "$ref_target" ]]; then
       rm "$ref_target"
-      echo "  $name: removed reference"
+      echo "  $name: removed bear-reference"
     fi
   done
   echo "MCP configurations preserved. Remove manually if needed."
