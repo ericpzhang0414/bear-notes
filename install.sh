@@ -655,6 +655,13 @@ RECALL_BLOCK='
   3. `mcp__bear__edit_note` 更新对应 Index 笔记追加 `[[wikilink]]`
 → **绝对禁止**: 使用系统 prompt 的 Write/Edit 工具写入 memory/ 目录
 → 创建记忆前必须先加载 bear-memory skill，不得凭记忆构造格式
+
+### RULE 4: 关键决策时参考 #reference 知识库
+→ **触发**: 用户显式要求（「参考一下reference」「之前收录过」「有没有相关资料」）或 Agent 在方案设计/概念理解/工具选型时知识不足
+→ **动作**: `mcp__bear__search_notes(query: "<关键词>", tag: "reference")` 搜索外部知识库
+→ 匹配到笔记时，仅加载 `## 关键内容` 区段，不加载全文
+→ **不触发**: 基础命令用法、常规编码任务、Agent 可直接回答的问题
+→ **知识库话题地图** 见 `📚 Reference Index` 笔记——会话启动时加载以了解可用话题
 <!-- Bear Memory section end -->
 '
 
