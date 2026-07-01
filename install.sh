@@ -57,7 +57,7 @@ AGENTS=(
   "workbuddy   dir $HOME/.workbuddy $HOME/.workbuddy/skills/bear-notes $HOME/.workbuddy/mcp.json"
   "gemini      cmd gemini $HOME/.gemini/skills/bear-notes $HOME/.gemini/settings.json"
   "copilot     cmd copilot $HOME/.copilot/skills/bear-notes $HOME/.copilot/mcp-config.json copilot"
-  "codex       cmd codex $HOME/.codex/skills/bear-notes $HOME/.codex/config.toml toml"
+  "codex       dir $HOME/.codex $HOME/.codex/skills/bear-notes $HOME/.codex/config.toml toml"
   "openclaw    cmd openclaw $HOME/.openclaw/skills/bear-notes $HOME/.openclaw/openclaw.json openclaw"
 )
 
