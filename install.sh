@@ -670,10 +670,10 @@ declare -A AGENT_INSTRUCTION_FILES
 AGENT_INSTRUCTION_FILES=(
   ["claude-code"]=".claude/CLAUDE.md"
   ["codebuddy"]=".codebuddy/CODEBUDDY.md"
-  ["workbuddy"]=".workbuddy/WORKBUDDY.md"
+  ["workbuddy"]=".workbuddy/AGENTS.md"
   ["gemini"]=".gemini/GEMINI.md"
-  ["copilot"]=".copilot/instructions.md"
-  ["codex"]=".codex/CODEX.md"
+  ["copilot"]=".copilot/copilot-instructions.md"
+  ["codex"]=".codex/AGENTS.md"
   ["openclaw"]=".openclaw/workspace/AGENTS.md"
 )
 
