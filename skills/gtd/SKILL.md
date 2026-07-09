@@ -208,11 +208,27 @@ Index Box entries may use non-standard formatting. Handle flexibly:
    a. Identify bare lines after item title (no list marker prefix)
    b. Classify each line:
       - Date formats (6月8日/6.8/📅 etc.) → 📅 YYYY-MM-DD[时段]
-      - Location (📍 prefix / keywords: 在/于/地点/位置/XX路/XX号/XXAPP) → 📍 location (auto-add 📍 if missing)
+      - Location (📍 prefix / keywords: 地址/地点/位置/在/于/XX路/XX号/XXAPP) → 📍 location
       - Source (from @ / @某人) → from @source
       - Everything else → content/context
-   c. Add >  prefix to each line
-   d. Reorder: content/context → 📅 YYYY-MM-DD → 📍 location → from @source
+   c. Merge duplicates with existing marker lines:
+      - If item already has a 📅 line AND current bare line is date-classified:
+        extract additional info (具体时间/时段) → merge into existing 📅 line
+        → discard the bare line (do NOT keep as separate line)
+      - If item already has a 📍 line AND current bare line is location-classified:
+        extract additional info → merge into existing 📍 line
+        → discard the bare line
+   d. Strip noise prefixes and wrap with markers:
+      - Location-classified lines: strip noise prefixes (地址：/地点：/位置：/在/于), wrap as `> 📍 ...`
+      - Date-classified lines (that weren't merged): wrap as `> 📅 YYYY-MM-DD[时段]`
+      - Source-classified lines: wrap as `> from @source`
+      - Content lines: wrap as `> content`
+      ⚠️ All bare lines MUST get `> ` prefix — no bare lines remain after this step.
+   e. Reorder within each item: content/context → 📅 YYYY-MM-DD → 📍 location → from @source
+   f. Per-item final verification pass:
+      - All supplementary lines have `> ` prefix (no bare lines)
+      - 📅 comes before 📍 (if both present)
+      - No residual noise prefixes (地址：/地点：/时间：/位置：)
    ⚠️ Date NEVER goes before content — verify every item before confirming.
 8. Show proposed format (with 🌟 annotations) → user confirms
 9. edit_note to replace with standard GTD format
