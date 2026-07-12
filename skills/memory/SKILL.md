@@ -262,7 +262,7 @@ This skill calls operations defined in the **bear-notes** skill:
 - Tag Operation Protocol (read header → edit with exact text)
 - MCP Availability Check (verify tools loaded before operating)
 
-If bear-notes skill is not loaded, all Bear operations must be prefixed with `mcp__bear__`.
+If bear-notes skill is not loaded, all Bear operations must be prefixed with `bear__`.
 
 ---
 

@@ -57,6 +57,7 @@ Create a new `GTD ARCHIVE YYYY` at the start of each year.
      a. Items with `📅 YYYY-MM-DD` date → ascending by date (soonest first; overdue even sooner)
      b. Items without date → after all dated items, newest-added first
   → Date source: `📅 YYYY-MM-DD` in description line or blockquote `> 📅 YYYY-MM-DD`
+- **Item descriptor should not duplicate blockquote info:** If a piece of information (📍 location, 📅 date, from @source) is already captured in a blockquote line, remove it from the item descriptor line. Example: 「在前海壹方汇看《功夫女足》」→ 「看《功夫女足》」（address already in `> 📍 前海壹方汇`）
 
 ### 🌟 Detection (during batch organize)
 
@@ -117,6 +118,8 @@ replace: "## 📥 Index Box\n\n- [ ] `[W]` `开发` new task\n\n## 📋 Next Act
    - If new item has no date: insert after the last dated item in group, before the first undated item (undated items sorted newest first).
 3. **Edge cases:** If target group is empty, insert at group boundary. Use adjacent item or section boundary as anchor.
 
+**After writing to TODO note, calendar sync:** If item has `📅 YYYY-MM-DD`, run the calendar sync flow below to create a Calendar event. See ## Calendar Integration.
+
 ### Update a task
 Use exact text match of the current item line. Ask the user what to change (description, type, domain, or notes).
 
@@ -173,7 +176,7 @@ When user says "review" or "周回顾":
 
 Trigger: 整理 gtd, 整理 todo, 整理待办, 清理 gtd, 清理 todo, 清理待办, cleanup gtd
 
-Executes 5 steps in order. **No confirmation needed — execute directly, output summary only.**
+Executes 7 steps in order. **No confirmation needed — execute directly, output summary only.**
 
 **Output format:** Only show a summary table: how many items processed, what they are, and which section they landed in. Do NOT output step-by-step process.
 
@@ -312,6 +315,22 @@ Done section sort order: newest completed at top (reverse chronological).
 3. No extra confirmation — threshold triggers auto-archive
 ```
 
+**Step 7: Calendar Sync**
+
+Sync all dated items with macOS Calendar.app. After all above steps:
+
+```
+1. Scan ALL sections (except Archive/Done) for items with 📅 YYYY-MM-DD
+2. For each dated item:
+   a. Determine calendar: [L] → "个人", [W] → "工作"
+   b. Parse date + time → specific time if available, else fallback mapping, else all-day
+   c. Build event title: item description (strip markers), append "(@ location)" if 📍 present
+   d. Dedup check in Calendar.app (same date + summary fuzzy match)
+   e. If not found → create event via AppleScript
+3. Skip: no 📅 date, or date < 30 days in the past
+4. Output summary: "📅 日历同步: N 新建, M 已存在, K 跳过"
+```
+
 **Pipeline summary:**
 
 ```
@@ -321,7 +340,80 @@ Done section sort order: newest completed at top (reverse chronological).
   ├─ 📅<今天 → 📅 Schedule > out of date
   ├─ 正常完成 (- [x]) → ☑️ Done (最前) → [≥20条触发] → 📦 Archive
   └─ 废弃 (~~text~~) → Delete (彻底移除，无确认)
+📅 Calendar Sync:
+  └─ 有日期条目 → 查重 → Calendar 补建
 ```
+
+## Calendar Integration
+
+macOS Calendar.app 同步。只在 GTD 条目带 `📅 YYYY-MM-DD` 时触发。
+
+### Calendar Mapping
+
+| GTD Domain | Calendar Name |
+|------------|---------------|
+| `[L]` | 个人 |
+| `[W]` | 工作 |
+
+### Time Resolution
+
+**优先具体数字时间，仅笼统时段词走兜底：**
+
+```
+📅 2026-07-12 09:00     → 09:00  (具体时间优先)
+📅 2026-07-12 早上9点   → 09:00  (有数字时间，直接用)
+📅 2026-07-12 晚上10:30 → 22:30  (有数字时间，直接用)
+📅 2026-07-12 早上      → 09:00  (笼统时段，兜底)
+📅 2026-07-12 晚上      → 19:00  (笼统时段，兜底)
+📅 2026-07-12           → 全天事件
+```
+
+| 时段词 | → 兜底时间 |
+|--------|----------|
+| `早上` / `早` | 09:00 |
+| `上午` | 10:00 |
+| `中午` | 12:00 |
+| `下午` | 14:00 |
+| `傍晚` | 18:00 |
+| `晚上` | 19:00 |
+| `夜里` | 22:00 |
+| `凌晨` | 02:00 (next day) |
+
+### Event Title
+
+从条目描述行提取：去掉 checkbox、🌟、`[L]`/`[W]`、`` `type` `` 标记。如果有 `📍` 则追加 `"(@ location)"`。
+
+### Dedup & Create
+
+先查重（同日期 + 标题关键词在 Calendar 中已存在则跳过），不存在则创建。
+
+Timed event (1小时):
+```bash
+osascript -e '
+tell application "Calendar"
+  set tCal to first calendar whose name is "{日历名}"
+  tell tCal
+    make new event with properties {summary:"{标题}", start date:date "{YYYY-MM-DD HH:MM:SS}", end date:date "{YYYY-MM-DD HH:MM:SS}" + (1 * hours)}
+  end tell
+end tell'
+```
+
+All-day event:
+```bash
+osascript -e '
+tell application "Calendar"
+  set tCal to first calendar whose name is "{日历名}"
+  tell tCal
+    make new event with properties {summary:"{标题}", start date:date "{YYYY-MM-DD}", end date:date "{YYYY-MM-DD}" + (1 * days), allday event:true}
+  end tell
+end tell'
+```
+
+### 注意事项
+
+- Calendar.app 权限已获得
+- 删除 GTD 条目不会自动删除 Calendar 事件（手动清理）
+- Calendar 名称固定，如需改请在 Calendar.app 中重命名后同步更新此处
 
 ## Format Validation
 After any write, verify:
